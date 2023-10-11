@@ -9,6 +9,8 @@ contract AggregatorV3Contract is Ownable {
 
     string desc;
 
+    
+
     uint256 versionOfOracle = 1;
 
     constructor(address _owner, uint8 _decimal, int256 _price, string memory _description) Ownable(_owner) {
