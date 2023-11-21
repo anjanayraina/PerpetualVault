@@ -14,7 +14,7 @@ contract USDC is ERC20, Ownable {
         _mint(to, amount);
     }
 
-    function decimals() public view override returns(uint8){
+    function decimals() public pure override returns(uint8){
         return 8;
     }
 }
