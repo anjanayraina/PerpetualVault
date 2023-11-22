@@ -19,7 +19,7 @@ contract PerpetualVault  is ERC4626{
         uint collateral;
         bool isLong;
         uint size;
-        uint256 positionID;
+        bytes32 positionID;
     }
     constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol) ERC4626(LPTokenAddress) ERC20(name , symbol){
         wBTCToken = BTCTokenAddress;
