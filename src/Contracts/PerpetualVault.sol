@@ -4,25 +4,35 @@ pragma solidity 0.8.20;
 // wBTC/USDC pool
 // how is the value of a share of the pool set ??
 
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+// import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-
+import IERC20 from "../Interfaces/IERC20.sol";
 contract PerpetualVault  is ERC4626{
-    using Counters for Counters.Counter;
-    Counters.Counter private currentPositionID;
+    // using Counters for Counters.Counter;
+    // Counters.Counter private currentPositionID;
     uint8 public constant MAX_LEVERAGE = 20;
-    IERC20 public BTCToken;
-    
+    uint8 public gasStipend;
+    IERC20 public wBTCToken;
+    IERC20 public USDCtoken;
     struct Position {
         address creator;
         uint collateral;
-        bool long;
+        bool isLong;
         uint size;
         uint256 positionID;
     }
     constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol) ERC4626(LPTokenAddress) ERC20(name , symbol){
         BTCToken = BTCTokenAddress;
-        currentPositionID.increment();
+        USDCToken= LPTokenAddress;
+        // currentPositionID.increment();
+    }
+
+    function getBTCAddress() public view  returns(IERC20){
+        return wBTCToken;
+    }
+
+    function getUSDCAddress() public view returns(IERC20){
+        return USDCToken;
     }
     
 
