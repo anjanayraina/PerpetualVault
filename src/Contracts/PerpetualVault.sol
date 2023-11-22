@@ -6,10 +6,11 @@ pragma solidity 0.8.21;
 
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
-
+import "../Interfaces/AggregatorV3Interface.sol";
 contract PerpetualVault  is ERC4626{
     // using Counters for Counters.Counter;
     // Counters.Counter private currentPositionID;
+    
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public gasStipend;
     IERC20 public wBTCToken;
@@ -21,6 +22,8 @@ contract PerpetualVault  is ERC4626{
         uint size;
         bytes32 positionID;
     }
+
+    mapping(bytes32 => Position) openPositons;
     constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol) ERC4626(LPTokenAddress) ERC20(name , symbol){
         wBTCToken = BTCTokenAddress;
         USDCToken= LPTokenAddress;
@@ -33,6 +36,10 @@ contract PerpetualVault  is ERC4626{
 
     function getUSDCAddress() public view returns(IERC20){
         return USDCToken;
+    }
+
+    function openPosition() external returns(bytes32){
+        return "";
     }
     
 
