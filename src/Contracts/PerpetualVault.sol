@@ -7,16 +7,34 @@ pragma solidity 0.8.21;
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
 import "../Interfaces/AggregatorV3Interface.sol";
-contract PerpetualVault  is ERC4626{
-    // using Counters for Counters.Counter;
-    // Counters.Counter private currentPositionID;
-    
+import "@openzeppelin/contracts/access/Ownable.sol";
+contract PerpetualVault  is ERC4626 , Ownable{
+// GOALS
+// - 1. Liquidity Providers can deposit and withdraw liquidity [Done]
+// - 2. Traders can open a perpetual position for BTC, with a given size and collateral []
+// - 3. A way to get the realtime price of the asset being traded []
+// - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
+// - 5. Traders can increase the size of a perpetual position []
+// - 6. Traders can increase the collateral of a perpetual position []
+// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions []
+// - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
+// - 9. Traders can decrease the collateral of their position []
+// - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function []
+// - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function []
+// - 12. Traders can never modify their position such that it would make the position liquidatable []
+// - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
+// - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
+
     uint8 public constant MAX_LEVERAGE = 20;
+    uint public constant GAS_STIPEND = 10;
     uint8 public gasStipend;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
+    AggregatorV3Interface btcPriceFeed;
+    AggregatorV3Interface usdcPriceFeed;
+    AggregatorV3Interface ethPriceFeed;
     struct Position {
-        address creator;
+        address positionOwner;
         uint collateral;
         bool isLong;
         uint size;
@@ -24,10 +42,13 @@ contract PerpetualVault  is ERC4626{
     }
 
     mapping(bytes32 => Position) openPositons;
-    constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol) ERC4626(LPTokenAddress) ERC20(name , symbol){
+    constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol , address _btcPriceFeed , address _usdcPriceFeed , address _ethPriceFeed, address owner) ERC4626(LPTokenAddress) ERC20(name , symbol) Ownable(owner){
         wBTCToken = BTCTokenAddress;
         USDCToken= LPTokenAddress;
-        
+        btcPriceFeed = AggregatorV3Interface(_btcPriceFeed);
+        usdcPriceFeed = AggregatorV3Interface(_usdcPriceFeed);
+        ethPriceFeed = AggregatorV3Interface(_ethPriceFeed);
+
     }
 
     function getBTCAddress() public view  returns(IERC20){
@@ -38,11 +59,24 @@ contract PerpetualVault  is ERC4626{
         return USDCToken;
     }
 
-    function openPosition() external returns(bytes32){
+    function openPosition() payable external returns(bytes32){
         return "";
     }
-    
 
 
+    function _getBTCPrice() internal view returns(uint  ) {
+        (, int price , , , ) = btcPriceFeed.latestRoundData();
+        return uint(price);
+    }
+
+    function _getUSDCPrice() internal view returns(uint ) {
+        (, int price , , , ) = usdcPriceFeed.latestRoundData();
+        return uint(price);
+    }
+
+    function _getETHPrice() internal view returns(uint  ) {
+        (, int price , , , ) = ethPriceFeed.latestRoundData();
+        return uint(price);
+    }
     
 }
