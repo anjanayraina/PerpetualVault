@@ -10,7 +10,7 @@ import "../Interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 contract PerpetualVault  is ERC4626 , Ownable{
 // GOALS
-// - 1. Liquidity Providers can deposit and withdraw liquidity [Done]
+// - 1. Liquidity Providers can deposit and withdraw liquidity []
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral []
 // - 3. A way to get the realtime price of the asset being traded []
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
@@ -64,19 +64,25 @@ contract PerpetualVault  is ERC4626 , Ownable{
     }
 
 
-    function _getBTCPrice() internal view returns(uint  ) {
+    function _getBTCPrice() internal view returns(uint256  ) {
         (, int price , , , ) = btcPriceFeed.latestRoundData();
         return uint(price);
     }
 
-    function _getUSDCPrice() internal view returns(uint ) {
+    function _getUSDCPrice() internal view returns(uint256 ) {
         (, int price , , , ) = usdcPriceFeed.latestRoundData();
         return uint(price);
     }
 
-    function _getETHPrice() internal view returns(uint  ) {
+    function _getETHPrice() internal view returns(uint256  ) {
         (, int price , , , ) = ethPriceFeed.latestRoundData();
         return uint(price);
+    }
+
+    function _getGasStipend() internal returns(uint256){
+        uint ethPrice = _getETHPrice()/ethPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
+        uint amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
     }
     
 }
