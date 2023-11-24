@@ -6,7 +6,7 @@ pragma solidity 0.8.21;
 // GOALS
 // - 1. Liquidity Providers can deposit and withdraw liquidity []
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral []
-// - 3. A way to get the realtime price of the asset being traded []
+// - 3. A way to get the realtime price of the asset being traded [Done]
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
 // - 5. Traders can increase the size of a perpetual position []
 // - 6. Traders can increase the collateral of a perpetual position []
@@ -65,7 +65,8 @@ contract PerpetualVault  is ERC4626 , Ownable{
         amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
     }
 
-    function openPosition() payable external returns(bytes32){
+    function openPosition(uint256 collateral , uint256 size , bool isLong) payable external returns(bytes32){
+        
         return "";
     }
 
