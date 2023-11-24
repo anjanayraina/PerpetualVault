@@ -3,12 +3,6 @@ pragma solidity 0.8.21;
 // testnet oracle : https://sepolia.etherscan.io/address/0x6090149792dAAeE9D1D568c9f9a6F6B46AA29eFD
 // wBTC/USDC pool
 // how is the value of a share of the pool set ??
-
-
-import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
-import "../Interfaces/AggregatorV3Interface.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-contract PerpetualVault  is ERC4626 , Ownable{
 // GOALS
 // - 1. Liquidity Providers can deposit and withdraw liquidity []
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral []
@@ -25,6 +19,12 @@ contract PerpetualVault  is ERC4626 , Ownable{
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
 
+
+
+import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
+import "../Interfaces/AggregatorV3Interface.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+contract PerpetualVault  is ERC4626 , Ownable{
     uint8 public constant MAX_LEVERAGE = 20;
     uint public constant GAS_STIPEND = 10;
     uint8 public gasStipend;
@@ -59,6 +59,12 @@ contract PerpetualVault  is ERC4626 , Ownable{
         return USDCToken;
     }
 
+    function _getGasStipend() public returns(uint256 amount ){
+        uint ethPrice = _getETHPrice()/ethPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
+        amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
+    }
+
     function openPosition() payable external returns(bytes32){
         return "";
     }
@@ -79,10 +85,6 @@ contract PerpetualVault  is ERC4626 , Ownable{
         return uint(price);
     }
 
-    function _getGasStipend() internal returns(uint256){
-        uint ethPrice = _getETHPrice()/ethPriceFeed.decimals();
-        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
-        uint amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
-    }
+
     
 }
