@@ -25,6 +25,10 @@ contract USDCTokenTest is Test {
         assertEq(contractAddress.name() , "USDC Token" );
     }
 
+    function test_Symbol() public {
+        assertEq(contractAddress.symbol() , "USDC" );
+    }
+
     function test_Mint(uint amount , address testAddr) public {
         vm.prank(address(1));
         contractAddress.mint(  testAddr, amount);
@@ -34,6 +38,12 @@ contract USDCTokenTest is Test {
     function testFail_OtherMint(uint amount , address testAddr) public {
         contractAddress.mint(  testAddr, amount);
         assertEq(contractAddress.balanceOf(testAddr), amount);     
+    }
+
+    function test_Transfer(address to , uint amount) public {
+        vm.deal(contractAddress,address(2),amount);
+        vm.prank(address(2));
+        assert(contractAddress.transfer(to , amount));
     }
 
 }
