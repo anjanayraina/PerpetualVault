@@ -10,7 +10,7 @@ pragma solidity 0.8.21;
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
 // - 5. Traders can increase the size of a perpetual position []
 // - 6. Traders can increase the collateral of a perpetual position []
-// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions []
+// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions [] 
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
 // - 9. Traders can decrease the collateral of their position []
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function []

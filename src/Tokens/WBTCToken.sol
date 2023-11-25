@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract USDC is ERC20, Ownable {
+contract WBTCToken is ERC20, Ownable {
     constructor(address initialOwner)
         ERC20("BTC Token", "wBTC")
         Ownable(initialOwner)
