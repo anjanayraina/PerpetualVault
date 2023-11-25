@@ -41,9 +41,11 @@ contract USDCTokenTest is Test {
     }
 
     function test_Transfer(address to , uint amount) public {
-        vm.deal(contractAddress,address(2),amount);
+        vm.prank(address(1));
+        contractAddress.mint(address(2), amount);
         vm.prank(address(2));
         assert(contractAddress.transfer(to , amount));
+        assert(contractAddress.balanceOf(to) == amount);
     }
 
 }
