@@ -35,13 +35,14 @@ contract PerpetualVault  is ERC4626 , Ownable{
     AggregatorV3Interface ethPriceFeed;
     struct Position {
         address positionOwner;
-        uint collateral;
+        uint256 collateral;
         bool isLong;
-        uint size;
+        uint256 size;
+        uint256 currentPrice;
         bytes32 positionID;
     }
 
-    mapping(bytes32 => Position) openPositons;
+    mapping(bytes32 => Position) private openPositons;
     constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol , address _btcPriceFeed , address _usdcPriceFeed , address _ethPriceFeed, address owner) ERC4626(LPTokenAddress) ERC20(name , symbol) Ownable(owner){
         wBTCToken = BTCTokenAddress;
         USDCToken= LPTokenAddress;
@@ -59,17 +60,19 @@ contract PerpetualVault  is ERC4626 , Ownable{
         return USDCToken;
     }
 
-    function _getGasStipend() public returns(uint256 amount ){
+    function getGasStipend() public returns(uint256 amount ){
         uint ethPrice = _getETHPrice()/ethPriceFeed.decimals();
         uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
         amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
     }
 
+
     function openPosition(uint256 collateral , uint256 size , bool isLong) payable external returns(bytes32){
-        
+        require(size/collateral <=MAX_LEVERAGE , "Cant open a Position");
+        uint256 totalAmountToDeposit = collateral + getGasStipend();
+    
         return "";
     }
-
 
     function _getBTCPrice() internal view returns(uint256  ) {
         (, int price , , , ) = btcPriceFeed.latestRoundData();
@@ -84,6 +87,14 @@ contract PerpetualVault  is ERC4626 , Ownable{
     function _getETHPrice() internal view returns(uint256  ) {
         (, int price , , , ) = ethPriceFeed.latestRoundData();
         return uint(price);
+    }
+
+    function _getPNL(bytes32 positionID) internal returns(uint256){
+        
+    }
+
+    function _getPosition(bytes32 positionID) internal returns(Position storage ){
+        return openPositons[positionID];
     }
 
 
