@@ -38,7 +38,7 @@ contract PerpetualVault  is ERC4626 , Ownable{
         uint256 collateral;
         bool isLong;
         uint256 size;
-        uint256 currentPriceInUSD;
+        uint256 creationSizeInUSD;
         bytes32 positionID;
     }
 
@@ -98,10 +98,10 @@ contract PerpetualVault  is ERC4626 , Ownable{
         uint256 btcPrice = _getBTCPrice()/btcPriceFeed.decimals();
         uint256 currentPositionPrice = position.size*btcPrice;
         if(position.isLong){
-            return int256(int256(currentPositionPrice) - int256(position.currentPriceInUSD));
+            return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
         }
 
-        return int256(int256(position.currentPriceInUSD ) - int256(currentPositionPrice));
+        return int256(int256(position.creationSizeInUSD ) - int256(currentPositionPrice));
 
     }
 
@@ -110,7 +110,8 @@ contract PerpetualVault  is ERC4626 , Ownable{
     }
 
     function _isHealthyPosition(bytes32 positionID) internal returns(bool ){
-        uint256 pnl = _getPNL(positionID);
+        int256 pnl = _getPNL(positionID);
+        if(pnl <=0 )return false;
 
     }
 
