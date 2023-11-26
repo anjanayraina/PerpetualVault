@@ -10,7 +10,7 @@ pragma solidity 0.8.21;
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
 // - 5. Traders can increase the size of a perpetual position []
 // - 6. Traders can increase the collateral of a perpetual position []
-// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions [] 
+// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions []
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
 // - 9. Traders can decrease the collateral of their position []
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function []
@@ -19,25 +19,24 @@ pragma solidity 0.8.21;
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
 
-
-
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
 import "../Interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-contract PerpetualVault  is ERC4626 , Ownable{
+
+contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 10;
-    uint8 public MIN_POSITION_SIZE = 2;
+    uint8 public MIN_POSITION_SIZE = 20;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
     AggregatorV3Interface btcPriceFeed;
     AggregatorV3Interface usdcPriceFeed;
     AggregatorV3Interface ethPriceFeed;
+
     struct Position {
         address positionOwner;
-        uint256 collateral;
+        uint256 collateralInUSD;
         bool isLong;
-        uint256 size;
         uint256 creationSizeInUSD;
         bytes32 positionID;
     }
@@ -47,74 +46,97 @@ contract PerpetualVault  is ERC4626 , Ownable{
     error MaxLeverageExcedded();
     error LowCollateral();
     error LowPositionSize();
-    
-    constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol , address _btcPriceFeed , address _usdcPriceFeed , address _ethPriceFeed, address owner) ERC4626(LPTokenAddress) ERC20(name , symbol) Ownable(owner){
+
+    constructor(
+        IERC20 LPTokenAddress,
+        IERC20 BTCTokenAddress,
+        string memory name,
+        string memory symbol,
+        address _btcPriceFeed,
+        address _usdcPriceFeed,
+        address _ethPriceFeed,
+        address owner
+    ) ERC4626(LPTokenAddress) ERC20(name, symbol) Ownable(owner) {
         wBTCToken = BTCTokenAddress;
-        USDCToken= LPTokenAddress;
+        USDCToken = LPTokenAddress;
         btcPriceFeed = AggregatorV3Interface(_btcPriceFeed);
         usdcPriceFeed = AggregatorV3Interface(_usdcPriceFeed);
         ethPriceFeed = AggregatorV3Interface(_ethPriceFeed);
-
     }
 
-    function getBTCAddress() public view  returns(IERC20){
+    function getBTCAddress() public view returns (IERC20) {
         return wBTCToken;
     }
 
-    function getUSDCAddress() public view returns(IERC20){
+    function getUSDCAddress() public view returns (IERC20) {
         return USDCToken;
     }
 
-    function getGasStipend() public returns(uint256 amount ){
-        uint ethPrice = _getETHPrice()/ethPriceFeed.decimals();
-        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
-        amount = (ethPrice*GAS_STIPEND*USDCToken.decimals())/(usdcPrice*1e9);
+    function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external payable returns (bytes32) {
+        if (collateralInUSD == 0) {
+            revert LowCollateral();
+        }
+        if (sizeInUSD < MIN_POSITION_SIZE) {
+            revert LowPositionSize();
+        }
+        if (sizeInUSD / collateralInUSD > MAX_LEVERAGE) {
+            revert MaxLeverageExcedded();
+        }
+
+        bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
+        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
+        USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
+        Position memory position = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash);
+
+        return positionHash;
     }
 
-
-    function openPosition(uint256 collateral , uint256 size , bool isLong) payable external returns(bytes32){
-        uint256 totalAmountToDeposit = collateral + getGasStipend();
-    
-        return "";
+    function _getBTCPrice() internal view returns (uint256) {
+        (, int256 price,,,) = btcPriceFeed.latestRoundData();
+        return uint256(price);
     }
 
-    function _getBTCPrice() internal view returns(uint256  ) {
-        (, int price , , , ) = btcPriceFeed.latestRoundData();
-        return uint(price);
+    function _getUSDCPrice() internal view returns (uint256) {
+        (, int256 price,,,) = usdcPriceFeed.latestRoundData();
+        return uint256(price);
     }
 
-    function _getUSDCPrice() internal view returns(uint256 ) {
-        (, int price , , , ) = usdcPriceFeed.latestRoundData();
-        return uint(price);
+    function _getETHPrice() internal view returns (uint256) {
+        (, int256 price,,,) = ethPriceFeed.latestRoundData();
+        return uint256(price);
     }
 
-    function _getETHPrice() internal view returns(uint256  ) {
-        (, int price , , , ) = ethPriceFeed.latestRoundData();
-        return uint(price);
-    }
-
-    function _getPNL(bytes32 positionID) internal returns(int256){
+    function _getPNL(bytes32 positionID) internal returns (int256) {
         Position memory position = _getPosition(positionID);
-        uint256 btcPrice = _getBTCPrice()/btcPriceFeed.decimals();
-        uint256 currentPositionPrice = position.size*btcPrice;
-        if(position.isLong){
+        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 currentPositionPrice = position.size * btcPrice;
+        if (position.isLong) {
             return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
         }
 
-        return int256(int256(position.creationSizeInUSD ) - int256(currentPositionPrice));
-
+        return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice));
     }
 
-    function _getPosition(bytes32 positionID) internal returns(Position storage ){
+    function _getPosition(bytes32 positionID) internal returns (Position storage) {
         return openPositons[positionID];
     }
 
-    function _isHealthyPosition(bytes32 positionID) internal returns(bool ){
+    function _isHealthyPosition(bytes32 positionID) internal returns (bool) {
         int256 pnl = _getPNL(positionID);
-        if(pnl <=0 )return false;
-
+        if (pnl <= 0) return false;
     }
 
+    function _getPositionHash(address owner, uint256 collateralInUSD, uint256 sizeInUSD, bool isLong)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(owner, collateralInUSD, sizeInUSD, isLong));
+    }
 
-    
+    function _getGasStipend() internal returns (uint256 amount) {
+        uint256 ethPrice = _getETHPrice() / ethPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
+        amount = (ethPrice * GAS_STIPEND * USDCToken.decimals()) / (usdcPrice * 1e9);
+    }
 }
