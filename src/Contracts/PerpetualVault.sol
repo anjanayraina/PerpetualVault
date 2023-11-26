@@ -26,8 +26,8 @@ import "../Interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 contract PerpetualVault  is ERC4626 , Ownable{
     uint8 public constant MAX_LEVERAGE = 20;
-    uint public constant GAS_STIPEND = 10;
-    uint8 public gasStipend;
+    uint8 public constant GAS_STIPEND = 10;
+    uint8 public MIN_POSITION_SIZE = 2;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
     AggregatorV3Interface btcPriceFeed;
@@ -38,11 +38,16 @@ contract PerpetualVault  is ERC4626 , Ownable{
         uint256 collateral;
         bool isLong;
         uint256 size;
-        uint256 currentPrice;
+        uint256 currentPriceInUSD;
         bytes32 positionID;
     }
 
     mapping(bytes32 => Position) private openPositons;
+
+    error MaxLeverageExcedded();
+    error LowCollateral();
+    error LowPositionSize();
+    
     constructor(IERC20 LPTokenAddress ,IERC20 BTCTokenAddress , string memory name , string memory symbol , address _btcPriceFeed , address _usdcPriceFeed , address _ethPriceFeed, address owner) ERC4626(LPTokenAddress) ERC20(name , symbol) Ownable(owner){
         wBTCToken = BTCTokenAddress;
         USDCToken= LPTokenAddress;
@@ -68,7 +73,6 @@ contract PerpetualVault  is ERC4626 , Ownable{
 
 
     function openPosition(uint256 collateral , uint256 size , bool isLong) payable external returns(bytes32){
-        require(size/collateral <=MAX_LEVERAGE , "Cant open a Position");
         uint256 totalAmountToDeposit = collateral + getGasStipend();
     
         return "";
@@ -89,12 +93,25 @@ contract PerpetualVault  is ERC4626 , Ownable{
         return uint(price);
     }
 
-    function _getPNL(bytes32 positionID) internal returns(uint256){
-        
+    function _getPNL(bytes32 positionID) internal returns(int256){
+        Position memory position = _getPosition(positionID);
+        uint256 btcPrice = _getBTCPrice()/btcPriceFeed.decimals();
+        uint256 currentPositionPrice = position.size*btcPrice;
+        if(position.isLong){
+            return int256(int256(currentPositionPrice) - int256(position.currentPriceInUSD));
+        }
+
+        return int256(int256(position.currentPriceInUSD ) - int256(currentPositionPrice));
+
     }
 
     function _getPosition(bytes32 positionID) internal returns(Position storage ){
         return openPositons[positionID];
+    }
+
+    function _isHealthyPosition(bytes32 positionID) internal returns(bool ){
+        uint256 pnl = _getPNL(positionID);
+
     }
 
 
