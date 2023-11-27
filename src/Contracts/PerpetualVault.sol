@@ -25,7 +25,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
-    uint8 public constant GAS_STIPEND = 10;
+    uint8 public constant GAS_STIPEND = 5;
     uint8 public MIN_POSITION_SIZE = 20;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
@@ -98,7 +98,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return uint256(price);
     }
 
-    function _getUSDCPrice() internal view returns (uint256) {
+    function _getUSDCPrice() public view returns (uint256) {
         (, int256 price,,,) = usdcPriceFeed.latestRoundData();
         return uint256(price);
     }
@@ -137,9 +137,8 @@ contract PerpetualVault is ERC4626, Ownable {
         return keccak256(abi.encodePacked(owner, collateralInUSD, sizeInUSD, isLong));
     }
 
-    function _getGasStipend() internal returns (uint256 amount) {
-        uint256 ethPrice = _getETHPrice() / ethPriceFeed.decimals();
-        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
-        amount = (ethPrice * GAS_STIPEND * USDCToken.decimals()) / (usdcPrice * 1e9);
+    function _getGasStipend() public returns (uint256 amount) {
+        uint256 usdcPrice = _getUSDCPrice();
+        amount = ( GAS_STIPEND *(10** USDCToken.decimals()) * (10**usdcPriceFeed.decimals())) / (usdcPrice );
     }
 }

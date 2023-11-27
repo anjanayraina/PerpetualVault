@@ -18,7 +18,7 @@ contract PerpetualVaultTest is Test {
     function setUp() public {
         usdcToken = new USDC(address(1));
         wBTCToken = new WBTCToken(address(1));
-        usdcOracle = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 100 , "USDC Oracle");
+        usdcOracle = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
         btcOracle = new AggregatorV3Contract(address(1) , wBTCToken.decimals() , 1000, "BTC Oracle");
         ethOracle = new AggregatorV3Contract(address(1) , 18 , 600 , "ETH Oracle");
 
@@ -33,8 +33,16 @@ contract PerpetualVaultTest is Test {
         assertEq(address(vault.getUSDCAddress()) ,address(usdcToken));
     }
 
-    function test_GasStipend() public {
+    function test_USDCPrice() public {
+        assertEq(vault._getUSDCPrice() , 10**6);
+    }
 
+    function test_USDCDecimals() public {
+        assertEq(usdcToken.decimals() ,6);
+    }
+
+    function test_GasStipend() public {
+        assertEq(vault._getGasStipend() ,5*10**6);
     }
     function test_openPosition() public {
 
