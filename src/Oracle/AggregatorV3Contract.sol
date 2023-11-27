@@ -13,7 +13,7 @@ contract AggregatorV3Contract is Ownable {
 
     constructor(address _owner, uint8 _decimal, int256 _price, string memory _description) Ownable(_owner) {
         decimal = _decimal;
-        price = _price**decimal;
+        price = _price;
         desc = _description;
     }
 
@@ -47,7 +47,7 @@ contract AggregatorV3Contract is Ownable {
         returns (uint80 roundID, int256 _price, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         roundID = 1;
-        _price = price**decimal;
+        _price = int(uint(price)*(10**decimal));
         startedAt = block.timestamp;
         updatedAt = block.timestamp;
         answeredInRound = 3;
