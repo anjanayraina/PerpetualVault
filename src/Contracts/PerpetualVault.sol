@@ -86,9 +86,10 @@ contract PerpetualVault is ERC4626, Ownable {
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
         uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
-        uint256 btcPrice = _getBTCPrice()/btcPriceFeed.decimals();
+        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
         USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
-        openPositons[positionHash] = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash , collateralInUSD/btcPrice);
+        openPositons[positionHash] =
+            Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, collateralInUSD / btcPrice);
         return positionHash;
     }
 
@@ -107,10 +108,10 @@ contract PerpetualVault is ERC4626, Ownable {
         return uint256(price);
     }
 
-    function _getPNL(bytes32 positionID) internal returns (int256) {
+    function _getPNL(bytes32 positionID) public returns (int256) {
         Position memory position = _getPosition(positionID);
         uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
-        uint256 currentPositionPrice = position.size * btcPrice ;
+        uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
             return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
         }
@@ -125,6 +126,7 @@ contract PerpetualVault is ERC4626, Ownable {
     function _isHealthyPosition(bytes32 positionID) internal returns (bool) {
         int256 pnl = _getPNL(positionID);
         if (pnl <= 0) return false;
+        return true;
     }
 
     function _getPositionHash(address owner, uint256 collateralInUSD, uint256 sizeInUSD, bool isLong)
