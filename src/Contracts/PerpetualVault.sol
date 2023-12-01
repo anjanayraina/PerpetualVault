@@ -51,6 +51,7 @@ contract PerpetualVault is ERC4626, Ownable {
     error LowPositionSize();
     error NotThePositionOwner();
     error PositionDoesNotExist();
+    error LowPositionCollateral();
 
     constructor(
         IERC20 LPTokenAddress,
@@ -106,9 +107,6 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function increasePositionSize(bytes32 positionID, uint256 newSizeInUSD) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
-        if (position.positionOwner == address(0)) {
-            revert PositionDoesNotExist();
-        }
         if ( newSizeInUSD<= position.creationSizeInUSD) {
             revert LowPositionSize();
         }
@@ -117,6 +115,14 @@ contract PerpetualVault is ERC4626, Ownable {
         }
     
     position.creationSizeInUSD = newSizeInUSD;
+    }
+
+    function increasePositionCollateral(bytes32 positionID , uint256 newCollateralInUSD) external onlyPositionOwner(positionID){
+        Position storage position = _getPosition(positionID);
+        if(newCollateralInUSD <= position.collateralInUSD){
+            revert LowPositionCollateral();
+        }
+        position.collateralInUSD = newCollateralInUSD;
     }
 
     function _getBTCPrice() internal view returns (uint256) {
@@ -153,7 +159,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return openPositons[positionID];
     }
 
-    function _isHealthyPosition(bytes32 positionID) internal returns (bool) {
+    function _isHealthyPosition(bytes32 positionID) internal view returns (bool) {
         int256 pnl = _getPNL(positionID);
         if (pnl <= 0) return false;
         return true;
