@@ -9,8 +9,8 @@ pragma solidity 0.8.21;
 // - 3. A way to get the realtime price of the asset being traded [Done]
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
 // - 5. Traders can increase the size of a perpetual position [Done] 
-// - 6. Traders can increase the collateral of a perpetual position []
-// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions []
+// - 6. Traders can increase the collateral of a perpetual position [Done]
+// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  []
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
 // - 9. Traders can decrease the collateral of their position []
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function []
@@ -28,7 +28,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
-    uint8 public MIN_POSITION_SIZE = 20;
+    uint8 public MIN_POSITION_SIZE = 20; 
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
     AggregatorV3Interface btcPriceFeed;
@@ -85,6 +85,10 @@ contract PerpetualVault is ERC4626, Ownable {
         return USDCToken;
     }
 
+    function totalAssets() public view override(ERC4626) returns (uint256){
+        int256 pnl = _getPNL(positionID);
+    }
+
     function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external returns (bytes32) {
         if (collateralInUSD == 0) {
             revert LowCollateral();
@@ -123,6 +127,10 @@ contract PerpetualVault is ERC4626, Ownable {
             revert LowPositionCollateral();
         }
         position.collateralInUSD = newCollateralInUSD;
+    }
+
+    function liquidate(bytes32 positionID) external {
+
     }
 
     function _getBTCPrice() internal view returns (uint256) {
