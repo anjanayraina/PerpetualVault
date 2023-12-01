@@ -8,7 +8,7 @@ pragma solidity 0.8.21;
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral [Done]
 // - 3. A way to get the realtime price of the asset being traded [Done]
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
-// - 5. Traders can increase the size of a perpetual position [Done] 
+// - 5. Traders can increase the size of a perpetual position [Done]
 // - 6. Traders can increase the collateral of a perpetual position [Done]
 // - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  []
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
@@ -28,13 +28,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
-    uint8 public MIN_POSITION_SIZE = 20; 
+    uint8 public MIN_POSITION_SIZE = 20;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
     AggregatorV3Interface btcPriceFeed;
     AggregatorV3Interface usdcPriceFeed;
     AggregatorV3Interface ethPriceFeed;
-
+    uint256 btcSizeOpened;
+    uint256 initialBTCInUSD;
     struct Position {
         address positionOwner;
         uint256 collateralInUSD;
@@ -85,7 +86,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return USDCToken;
     }
 
-    function totalAssets() public view override(ERC4626) returns (uint256){
+    function totalAssets() public view override(ERC4626) returns (uint256) {
         int256 pnl = _getPNL(positionID);
     }
 
@@ -111,27 +112,28 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function increasePositionSize(bytes32 positionID, uint256 newSizeInUSD) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
-        if ( newSizeInUSD<= position.creationSizeInUSD) {
+        if (newSizeInUSD <= position.creationSizeInUSD) {
             revert LowPositionSize();
         }
         if (newSizeInUSD / position.collateralInUSD > MAX_LEVERAGE) {
             revert MaxLeverageExcedded();
         }
-    
-    position.creationSizeInUSD = newSizeInUSD;
+
+        position.creationSizeInUSD = newSizeInUSD;
     }
 
-    function increasePositionCollateral(bytes32 positionID , uint256 newCollateralInUSD) external onlyPositionOwner(positionID){
+    function increasePositionCollateral(bytes32 positionID, uint256 newCollateralInUSD)
+        external
+        onlyPositionOwner(positionID)
+    {
         Position storage position = _getPosition(positionID);
-        if(newCollateralInUSD <= position.collateralInUSD){
+        if (newCollateralInUSD <= position.collateralInUSD) {
             revert LowPositionCollateral();
         }
         position.collateralInUSD = newCollateralInUSD;
     }
 
-    function liquidate(bytes32 positionID) external {
-
-    }
+    function liquidate(bytes32 positionID) external {}
 
     function _getBTCPrice() internal view returns (uint256) {
         (, int256 price,,,) = btcPriceFeed.latestRoundData();
