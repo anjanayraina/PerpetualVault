@@ -18,7 +18,7 @@ pragma solidity 0.8.21;
 // - 12. Traders can never modify their position such that it would make the position liquidatable []
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
-// - 15.
+// - 15. Implement Double Oracle System in the contract [] - Currently Doing (Anjanay)
 // problem with wBTC decimals
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
