@@ -6,6 +6,7 @@ import {PerpetualVault} from "../src/Contracts/PerpetualVault.sol";
 import {USDC} from "../src/Tokens/USDCToken.sol";
 import {WBTCToken} from "../src/Tokens/WBTCToken.sol";
 import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
+
 contract PerpetualVaultTest is Test {
     USDC usdcToken;
     WBTCToken wBTCToken;
@@ -22,30 +23,37 @@ contract PerpetualVaultTest is Test {
         btcOracle = new AggregatorV3Contract(address(1) , wBTCToken.decimals() , 1000, "BTC Oracle");
         ethOracle = new AggregatorV3Contract(address(1) , 18 , 600 , "ETH Oracle");
 
-        vault = new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(btcOracle) , address(usdcOracle) ,address(ethOracle) , address(1) );
+        vault =
+        new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(btcOracle) , address(usdcOracle) ,address(ethOracle) , address(1) );
     }
 
     function test_BTCOracle() public {
-    assertEq(address(vault.getBTCAddress()) ,address(wBTCToken));
+        assertEq(address(vault.getBTCAddress()), address(wBTCToken));
     }
 
     function test_USDCOracle() public {
-        assertEq(address(vault.getUSDCAddress()) ,address(usdcToken));
+        assertEq(address(vault.getUSDCAddress()), address(usdcToken));
     }
 
     function test_USDCPrice() public {
-        assertEq(vault._getUSDCPrice() , 10**6);
+        assertEq(vault._getUSDCPrice(), 10 ** 6);
     }
 
     function test_USDCDecimals() public {
-        assertEq(usdcToken.decimals() ,6);
+        assertEq(usdcToken.decimals(), 6);
     }
 
     function test_GasStipend() public {
-        assertEq(vault._getGasStipend() ,5*10**6);
+        assertEq(vault._getGasStipend(), 5 * 10 ** 6);
     }
+
     function test_openPosition() public {
-
+        vm.prank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(1), 100, 1000, true);
+        assertEq(tempHash, hashValue);
     }
-
 }

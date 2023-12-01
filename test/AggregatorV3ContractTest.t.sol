@@ -5,8 +5,8 @@ import {Test, console2} from "forge-std/Test.sol";
 import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
 
 contract AggregatorV3ContractTest is Test {
-    
     AggregatorV3Contract oracle;
+
     function setUp() public {
         oracle = new AggregatorV3Contract(address(1) , 6 , 100 , "Oracle");
     }
@@ -16,11 +16,11 @@ contract AggregatorV3ContractTest is Test {
     }
 
     function test_checkVersion() public {
-        assertEq(oracle.version() , 1);
-    }
-    function test_checkPrice() public {
-        (, int price , , , ) = oracle.latestRoundData();
-        assertEq(price , 100*(10**6));
+        assertEq(oracle.version(), 1);
     }
 
+    function test_checkPrice() public {
+        (, int256 price,,,) = oracle.latestRoundData();
+        assertEq(price, 100 * (10 ** 6));
+    }
 }
