@@ -34,7 +34,10 @@ contract PerpetualVault is ERC4626, Ownable {
     AggregatorV3Interface btcPriceFeed;
     AggregatorV3Interface usdcPriceFeed;
     AggregatorV3Interface ethPriceFeed;
-    uint256 btcSizeOpened;
+    uint256 initialBTCInUSDLong;
+    uint256 initialBTCInUSDShort;
+    uint256 btcSizeOpenedLong;
+    uint256 btcSizeOpenedShort;
     uint256 initialBTCInUSD;
     struct Position {
         address positionOwner;
@@ -87,7 +90,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function totalAssets() public view override(ERC4626) returns (uint256) {
-        int256 pnl = _getPNL(positionID);
+        int256 pnl = getSystemPNL();
     }
 
     function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external returns (bytes32) {
@@ -161,6 +164,22 @@ contract PerpetualVault is ERC4626, Ownable {
         return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice));
     }
 
+    function getSystemPNL() public view returns(int256){
+        return getLongPNL() + getShortPNL();
+
+    }
+
+    function getLongPNL() public view returns(int256){
+        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        return int256(initialBTCInUSDLong) - int256(btcSizeOpenedLong*btcPrice);
+    }
+
+    function getShortPNL() public view returns(int256){
+        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        return int256(btcSizeOpenedShort*btcPrice) - int256(initialBTCInUSDShort);
+        
+    }
+
     function getPosition(bytes32 positionID) public view returns (Position memory) {
         return openPositons[positionID];
     }
@@ -169,10 +188,14 @@ contract PerpetualVault is ERC4626, Ownable {
         return openPositons[positionID];
     }
 
-    function _isHealthyPosition(bytes32 positionID) internal view returns (bool) {
+    function isHealthyPosition(bytes32 positionID) public view returns (bool) {
         int256 pnl = _getPNL(positionID);
         if (pnl <= 0) return false;
-        return true;
+        Position memory position = getPosition(positionID);
+        uint256 adjustedCollateral = position.collateralInUSD + pnl;
+        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 leverage = (position.size * btcPrice)/adjustedCollateral;
+        return leverage < MAX_LEVERAGE;
     }
 
     function _getPositionHash(address owner, uint256 collateralInUSD, uint256 sizeInUSD, bool isLong)
