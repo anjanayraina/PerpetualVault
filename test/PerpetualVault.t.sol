@@ -47,13 +47,17 @@ contract PerpetualVaultTest is Test {
         assertEq(vault._getGasStipend(), 5 * 10 ** 6);
     }
 
+    function test_USDCOwner() public {
+        assertEq(usdcToken.owner() ,address(1));
+    }
+
     function test_openPosition() public {
         vm.prank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
         vm.startPrank(address(2));
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
-        bytes32 tempHash = vault._getPositionHash(address(1), 100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
         assertEq(tempHash, hashValue);
     }
 }
