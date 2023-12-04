@@ -48,7 +48,7 @@ contract PerpetualVaultTest is Test {
     }
 
     function test_USDCOwner() public {
-        assertEq(usdcToken.owner() ,address(1));
+        assertEq(usdcToken.owner(), address(1));
     }
 
     function test_openPosition() public {

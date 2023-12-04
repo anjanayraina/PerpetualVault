@@ -13,7 +13,7 @@ pragma solidity 0.8.21;
 // - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  []
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
 // - 9. Traders can decrease the collateral of their position []
-// - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function []
+// - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function [Done]
 // - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function []
 // - 12. Traders can never modify their position such that it would make the position liquidatable [Done]
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
@@ -140,30 +140,25 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function liquidate(bytes32 positionID) external {
         Position memory position = getPosition(positionID);
-        if(isHealthyPosition(positionID) && position.positionOwner != msg.sender){
-           revert PositionHealthy(); 
+        if (isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
+            revert PositionHealthy();
         }
-        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
-        if(pnl < 0){
-            if(_absoluteValue(pnl) > position.collateralInUSD){
+        if (pnl < 0) {
+            if (_absoluteValue(pnl) > position.collateralInUSD) {
                 amountToReturn = position.collateralInUSD;
-            }
-            else{
+            } else {
                 amountToReturn = position.collateralInUSD - _absoluteValue(pnl);
             }
-            
-        }
-
-        else {
+        } else {
             amountToReturn = position.collateralInUSD + uint256(pnl);
         }
 
         uint256 gasStipend = _getGasStipend();
-        USDCToken.transferFrom(address(this) , position.positionOwner, amountToReturn/usdcPrice);
-        USDCToken.transferFrom(address(this) , msg.sender , gasStipend);
-
+        USDCToken.transferFrom(address(this), position.positionOwner, amountToReturn / usdcPrice);
+        USDCToken.transferFrom(address(this), msg.sender, gasStipend);
     }
 
     function _getBTCPrice() internal view returns (uint256) {
@@ -233,11 +228,11 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function _getGasStipend() public returns (uint256 amount) {
-        uint256 usdcPrice = _getUSDCPrice()/usdcPriceFeed.decimals();
-        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** usdcPriceFeed.decimals())) / (usdcPrice);
+        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
+        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** usdcPriceFeed.decimals()));
     }
 
-    function _absoluteValue(int256 value) internal returns (uint256){
+    function _absoluteValue(int256 value) internal returns (uint256) {
         return uint256(value >= 0 ? value : -value);
     }
 }
