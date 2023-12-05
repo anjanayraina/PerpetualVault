@@ -18,12 +18,14 @@ pragma solidity 0.8.21;
 // - 12. Traders can never modify their position such that it would make the position liquidatable [Done]
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
-// - 15. Implement Double Oracle System in the contract [] - Currently Doing (Anjanay)
+// - 15. Implement Double Oracle System in the contract [Done]
+// - 16. Interagte the Double Oracle System in PerpetualVault Contract []
 // problem with wBTC decimals
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
-import "../Interfaces/AggregatorV3Interface.sol";
+import "../PriceFeed/ChainLinkPriceFeed.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../Oracle/AggregatorV3Contract.sol";
 
 contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
@@ -31,9 +33,7 @@ contract PerpetualVault is ERC4626, Ownable {
     uint8 public MIN_POSITION_SIZE = 20;
     IERC20 public wBTCToken;
     IERC20 public USDCToken;
-    AggregatorV3Interface btcPriceFeed;
-    AggregatorV3Interface usdcPriceFeed;
-    AggregatorV3Interface ethPriceFeed;
+    ChainLinkPriceFeed priceFeed;
     uint256 initialBTCInUSDLong;
     uint256 initialBTCInUSDShort;
     uint256 btcSizeOpenedLong;
@@ -64,16 +64,11 @@ contract PerpetualVault is ERC4626, Ownable {
         IERC20 BTCTokenAddress,
         string memory name,
         string memory symbol,
-        address _btcPriceFeed,
-        address _usdcPriceFeed,
-        address _ethPriceFeed,
         address owner
     ) ERC4626(LPTokenAddress) ERC20(name, symbol) Ownable(owner) {
         wBTCToken = BTCTokenAddress;
         USDCToken = LPTokenAddress;
-        btcPriceFeed = AggregatorV3Interface(_btcPriceFeed);
-        usdcPriceFeed = AggregatorV3Interface(_usdcPriceFeed);
-        ethPriceFeed = AggregatorV3Interface(_ethPriceFeed);
+        priceFeed = ChainLinkPriceFeed(address(1));
     }
 
     modifier onlyPositionOwner(bytes32 positionID) {
@@ -107,8 +102,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
-        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
-        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
         openPositons[positionHash] =
             Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, collateralInUSD / btcPrice);
@@ -143,7 +138,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
             revert PositionHealthy();
         }
-        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
+        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
         if (pnl < 0) {
@@ -162,23 +157,23 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function _getBTCPrice() internal view returns (uint256) {
-        (, int256 price,,,) = btcPriceFeed.latestRoundData();
+        int256 price= priceFeed.getPrice("WBTC");
         return uint256(price);
     }
 
     function _getUSDCPrice() public view returns (uint256) {
-        (, int256 price,,,) = usdcPriceFeed.latestRoundData();
+        int256 price = priceFeed.getPrice("USDC");
         return uint256(price);
     }
 
     function _getETHPrice() internal view returns (uint256) {
-        (, int256 price,,,) = ethPriceFeed.latestRoundData();
+        int256 price = priceFeed.getPrice("ETH");
         return uint256(price);
     }
 
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
-        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
             return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
@@ -192,12 +187,12 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function getLongPNL() public view returns (int256) {
-        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         return int256(initialBTCInUSDLong) - int256(btcSizeOpenedLong * btcPrice);
     }
 
     function getShortPNL() public view returns (int256) {
-        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         return int256(btcSizeOpenedShort * btcPrice) - int256(initialBTCInUSDShort);
     }
 
@@ -214,7 +209,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (pnl < 0) return false;
         Position memory position = getPosition(positionID);
         uint256 adjustedCollateral = position.collateralInUSD + uint256(pnl);
-        uint256 btcPrice = _getBTCPrice() / btcPriceFeed.decimals();
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         uint256 leverage = (position.size * btcPrice) / adjustedCollateral;
         return leverage <= MAX_LEVERAGE;
     }
@@ -228,11 +223,11 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function _getGasStipend() public returns (uint256 amount) {
-        uint256 usdcPrice = _getUSDCPrice() / usdcPriceFeed.decimals();
-        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** usdcPriceFeed.decimals()));
+        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC")));
     }
 
-    function _absoluteValue(int256 value) internal returns (uint256) {
+    function _absoluteValue(int256 value) internal pure returns (uint256) {
         return uint256(value >= 0 ? value : -value);
     }
 }

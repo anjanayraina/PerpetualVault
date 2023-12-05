@@ -10,21 +10,19 @@ import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
 contract PerpetualVaultTest is Test {
     USDC usdcToken;
     WBTCToken wBTCToken;
-    AggregatorV3Contract usdcOracle;
-    AggregatorV3Contract btcOracle;
-    AggregatorV3Contract ethOracle;
+
 
     PerpetualVault vault;
 
     function setUp() public {
         usdcToken = new USDC(address(1));
         wBTCToken = new WBTCToken(address(1));
-        usdcOracle = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
-        btcOracle = new AggregatorV3Contract(address(1) , wBTCToken.decimals() , 1000, "BTC Oracle");
-        ethOracle = new AggregatorV3Contract(address(1) , 18 , 600 , "ETH Oracle");
+        // usdcOracle = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
+        // btcOracle = new AggregatorV3Contract(address(1) , wBTCToken.decimals() , 1000, "BTC Oracle");
+        // ethOracle = new AggregatorV3Contract(address(1) , 18 , 600 , "ETH Oracle");
 
         vault =
-        new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(btcOracle) , address(usdcOracle) ,address(ethOracle) , address(1) );
+        new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(1) );
     }
 
     function test_BTCOracle() public {
