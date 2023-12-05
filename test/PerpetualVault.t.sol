@@ -17,10 +17,6 @@ contract PerpetualVaultTest is Test {
     function setUp() public {
         usdcToken = new USDC(address(1));
         wBTCToken = new WBTCToken(address(1));
-        // usdcOracle = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
-        // btcOracle = new AggregatorV3Contract(address(1) , wBTCToken.decimals() , 1000, "BTC Oracle");
-        // ethOracle = new AggregatorV3Contract(address(1) , 18 , 600 , "ETH Oracle");
-
         vault =
         new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(1) );
     }

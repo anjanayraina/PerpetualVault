@@ -68,7 +68,10 @@ contract PerpetualVault is ERC4626, Ownable {
     ) ERC4626(LPTokenAddress) ERC20(name, symbol) Ownable(owner) {
         wBTCToken = BTCTokenAddress;
         USDCToken = LPTokenAddress;
-        priceFeed = ChainLinkPriceFeed(address(1));
+        priceFeed = ChainLinkPriceFeed(msg.sender);
+        priceFeed.addToken("USDC", address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) , 1 , USDCToken.decimals());
+        priceFeed.addToken("WBTC" ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")), 100 , wBTCToken.decimals());
+        priceFeed.addToken("ETH" , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , 1000 , 18);
     }
 
     modifier onlyPositionOwner(bytes32 positionID) {
@@ -223,8 +226,8 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function _getGasStipend() public returns (uint256 amount) {
-        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
-        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC")));
+        uint256 usdcPrice = _getUSDCPrice();
+        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC")))/usdcPrice;
     }
 
     function _absoluteValue(int256 value) internal pure returns (uint256) {
