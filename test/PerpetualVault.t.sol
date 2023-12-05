@@ -44,8 +44,9 @@ contract PerpetualVaultTest is Test {
     }
 
     function test_openPosition() public {
-        vm.prank(address(1));
+        vm.startPrank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
         vm.startPrank(address(2));
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
