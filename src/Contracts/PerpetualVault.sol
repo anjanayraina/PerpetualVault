@@ -68,7 +68,7 @@ contract PerpetualVault is ERC4626, Ownable {
     ) ERC4626(LPTokenAddress) ERC20(name, symbol) Ownable(owner) {
         wBTCToken = BTCTokenAddress;
         USDCToken = LPTokenAddress;
-        priceFeed = ChainLinkPriceFeed(msg.sender);
+        priceFeed = new ChainLinkPriceFeed(address(this));
         priceFeed.addToken("USDC", address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) , 1 , USDCToken.decimals());
         priceFeed.addToken("WBTC" ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")), 100 , wBTCToken.decimals());
         priceFeed.addToken("ETH" , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , 1000 , 18);
