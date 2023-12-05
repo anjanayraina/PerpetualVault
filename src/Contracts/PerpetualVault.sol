@@ -19,7 +19,7 @@ pragma solidity 0.8.21;
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
 // - 15. Implement Double Oracle System in the contract [Done]
-// - 16. Interagte the Double Oracle System in PerpetualVault Contract []
+// - 16. Interagte the Double Oracle System in PerpetualVault Contract [Done]
 // problem with wBTC decimals
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
@@ -59,19 +59,35 @@ contract PerpetualVault is ERC4626, Ownable {
     error LowPositionCollateral();
     error PositionHealthy();
 
-    constructor(
-        IERC20 LPTokenAddress,
-        IERC20 BTCTokenAddress,
-        string memory name,
-        string memory symbol,
-        address owner
-    ) ERC4626(LPTokenAddress) ERC20(name, symbol) Ownable(owner) {
+    constructor(IERC20 LPTokenAddress, IERC20 BTCTokenAddress, string memory name, string memory symbol, address owner)
+        ERC4626(LPTokenAddress)
+        ERC20(name, symbol)
+        Ownable(owner)
+    {
         wBTCToken = BTCTokenAddress;
         USDCToken = LPTokenAddress;
         priceFeed = new ChainLinkPriceFeed(address(this));
-        priceFeed.addToken("USDC", address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")) , 1 , USDCToken.decimals());
-        priceFeed.addToken("WBTC" ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")) ,address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")), 100 , wBTCToken.decimals());
-        priceFeed.addToken("ETH" , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")) , 1000 , 18);
+        priceFeed.addToken(
+            "USDC",
+            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")),
+            1,
+            USDCToken.decimals()
+        );
+        priceFeed.addToken(
+            "WBTC",
+            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")),
+            100,
+            wBTCToken.decimals()
+        );
+        priceFeed.addToken(
+            "ETH",
+            address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , 18, 1 , "Oracle")),
+            1000,
+            18
+        );
     }
 
     modifier onlyPositionOwner(bytes32 positionID) {
@@ -125,15 +141,12 @@ contract PerpetualVault is ERC4626, Ownable {
         position.creationSizeInUSD = newSizeInUSD;
     }
 
-    function increasePositionCollateral(bytes32 positionID, uint256 newCollateralInUSD)
+    function increasePositionCollateral(bytes32 positionID, uint256 sizeChange )
         external
         onlyPositionOwner(positionID)
     {
         Position storage position = _getPosition(positionID);
-        if (newCollateralInUSD <= position.collateralInUSD) {
-            revert LowPositionCollateral();
-        }
-        position.collateralInUSD = newCollateralInUSD;
+
     }
 
     function liquidate(bytes32 positionID) external {
@@ -160,7 +173,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function _getBTCPrice() internal view returns (uint256) {
-        int256 price= priceFeed.getPrice("WBTC");
+        int256 price = priceFeed.getPrice("WBTC");
         return uint256(price);
     }
 
@@ -209,9 +222,13 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function isHealthyPosition(bytes32 positionID) public view returns (bool) {
         int256 pnl = _getPNL(positionID);
-        if (pnl < 0) return false;
         Position memory position = getPosition(positionID);
-        uint256 adjustedCollateral = position.collateralInUSD + uint256(pnl);
+        uint256 adjustedCollateral;
+        if (pnl < 0) {
+            adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl);
+        } else {
+            adjustedCollateral = position.collateralInUSD + uint256(pnl);
+        }
         uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         uint256 leverage = (position.size * btcPrice) / adjustedCollateral;
         return leverage <= MAX_LEVERAGE;
@@ -227,10 +244,64 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function _getGasStipend() public returns (uint256 amount) {
         uint256 usdcPrice = _getUSDCPrice();
-        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC")))/usdcPrice;
+        amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC"))) / usdcPrice;
     }
 
     function _absoluteValue(int256 value) internal pure returns (uint256) {
         return uint256(value >= 0 ? value : -value);
+    }
+
+    function _canChangeCollateral(bytes32 positionID, uint256 sizeChange, bool isIncement) public view returns (bool) {
+        Position memory position = getPosition(positionID);
+        int256 pnl = _getPNL(positionID);
+        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        uint256 adjustedCollateral;
+        if (pnl < 0) {
+            if (isIncement) {
+                adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl) + sizeChange;
+            } else {
+                adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl) - sizeChange;
+            }
+        } else {
+            if (isIncement) {
+                adjustedCollateral = position.collateralInUSD + uint256(pnl) + sizeChange;
+            } else {
+                adjustedCollateral = position.collateralInUSD + uint256(pnl) - sizeChange;
+            }
+        }
+        if (adjustedCollateral == 0) return false;
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        uint256 leverage = (position.size * btcPrice) / adjustedCollateral;
+        return leverage <= MAX_LEVERAGE;
+    }
+
+    function _canChangeSize(bytes32 positionID, uint256 sizeChange , bool isIncerement) public view returns(bool){
+        Position memory position = getPosition(positionID);
+        int256 pnl = _getPNL(positionID);
+        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        uint256 adjustedCollateral;
+        if(pnl < 0){
+            adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl);
+        }
+
+        else{
+            adjustedCollateral = position.collateralInUSD + uint256(pnl);
+        }
+
+        if(adjustedCollateral == 0){
+            return false;
+        }
+        uint256 adjustedSize;
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        if(isIncerement){
+            adjustedSize = position.size * btcPrice + sizeChange;
+        }
+        else{
+            adjustedSize = position.size * btcPrice - sizeChange;
+        }
+        if(adjustedSize == 0)return false;
+        
+        uint256 leverage = adjustedSize / adjustedCollateral;
+        return leverage <= MAX_LEVERAGE;
     }
 }
