@@ -109,6 +109,14 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function totalAssets() public view override(ERC4626) returns (uint256) {
         int256 pnl = getSystemPNL();
+        if(pnl <= 0){
+            return super.totalAssets();
+        }
+        return super.totalAssets() - _absoluteValue(pnl);
+    }
+
+    function withdraw(uint256 assets , address reciever , address owner) public override(ERC4626) returns(uint256){
+
     }
 
     function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external returns (bytes32) {
@@ -130,18 +138,6 @@ contract PerpetualVault is ERC4626, Ownable {
             Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, collateralInUSD / btcPrice);
         return positionHash;
     }
-
-    // function increasePositionSize(bytes32 positionID, uint256 newSizeInUSD) external onlyPositionOwner(positionID) {
-    //     Position storage position = _getPosition(positionID);
-    //     if (newSizeInUSD <= position.creationSizeInUSD) {
-    //         revert LowPositionSize();
-    //     }
-    //     if (newSizeInUSD / position.collateralInUSD > MAX_LEVERAGE) {
-    //         revert MaxLeverageExcedded();
-    //     }
-
-    //     position.creationSizeInUSD = newSizeInUSD;
-    // }
 
     function increasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
@@ -184,7 +180,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
     function liquidate(bytes32 positionID) external {
         Position memory position = getPosition(positionID);
-        if (isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
+        if (_isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
             revert PositionHealthy();
         }
         uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
@@ -204,6 +200,8 @@ contract PerpetualVault is ERC4626, Ownable {
         USDCToken.transferFrom(address(this), position.positionOwner, amountToReturn / usdcPrice);
         USDCToken.transferFrom(address(this), msg.sender, gasStipend);
     }
+
+    
 
     function _getBTCPrice() internal view returns (uint256) {
         int256 price = priceFeed.getPrice("WBTC");
@@ -253,7 +251,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return openPositons[positionID];
     }
 
-    function isHealthyPosition(bytes32 positionID) public view returns (bool) {
+    function _isHealthyPosition(bytes32 positionID) public view returns (bool) {
         int256 pnl = _getPNL(positionID);
         Position memory position = getPosition(positionID);
         uint256 adjustedCollateral;

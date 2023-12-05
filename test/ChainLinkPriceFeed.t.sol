@@ -10,15 +10,20 @@ contract ChainLinkPriceFeedTest is Test {
     USDC usdcToken;
     AggregatorV3Contract usdcOracle1;
     AggregatorV3Contract usdcOracle2;
-    ChainLinkPriceFeed feed;
+    ChainLinkPriceFeed feed ;
 
-    function setUp() public {
+     function setUp() public {
         usdcToken = new USDC(address(1));
         usdcOracle1 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
         usdcOracle2 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1, "USDC Oracle");
         feed = new ChainLinkPriceFeed(address(1));
-        feed.addToken("USDC", address(usdcOracle1), address(usdcOracle2), 1, usdcToken.decimals());
+        feed.addToken("USDC" , address(usdcOracle1) ,address(usdcOracle2) , 1 , usdcToken.decimals());
+
+
     }
 
-    function test_PriceCheck() public {}
+    function test_PriceCheck() public {
+        
+    }
+
 }
