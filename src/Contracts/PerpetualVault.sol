@@ -11,8 +11,8 @@ pragma solidity 0.8.21;
 // - 5. Traders can increase the size of a perpetual position [Done]
 // - 6. Traders can increase the collateral of a perpetual position [Done]
 // - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  []
-// - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL []
-// - 9. Traders can decrease the collateral of their position []
+// - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL [Done]
+// - 9. Traders can decrease the collateral of their position [Done]
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function [Done]
 // - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function []
 // - 12. Traders can never modify their position such that it would make the position liquidatable [Done]
@@ -59,6 +59,7 @@ contract PerpetualVault is ERC4626, Ownable {
     error LowPositionCollateral();
     error PositionHealthy();
     error CannotChangeCollateral();
+    error CannotChangeSize();
 
     constructor(IERC20 LPTokenAddress, IERC20 BTCTokenAddress, string memory name, string memory symbol, address owner)
         ERC4626(LPTokenAddress)
@@ -130,33 +131,57 @@ contract PerpetualVault is ERC4626, Ownable {
         return positionHash;
     }
 
-    function increasePositionSize(bytes32 positionID, uint256 newSizeInUSD) external onlyPositionOwner(positionID) {
+    // function increasePositionSize(bytes32 positionID, uint256 newSizeInUSD) external onlyPositionOwner(positionID) {
+    //     Position storage position = _getPosition(positionID);
+    //     if (newSizeInUSD <= position.creationSizeInUSD) {
+    //         revert LowPositionSize();
+    //     }
+    //     if (newSizeInUSD / position.collateralInUSD > MAX_LEVERAGE) {
+    //         revert MaxLeverageExcedded();
+    //     }
+
+    //     position.creationSizeInUSD = newSizeInUSD;
+    // }
+
+    function increasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
-        if (newSizeInUSD <= position.creationSizeInUSD) {
-            revert LowPositionSize();
-        }
-        if (newSizeInUSD / position.collateralInUSD > MAX_LEVERAGE) {
-            revert MaxLeverageExcedded();
+        if (!_canChangeSize(positionID, sizeChange, true)) {
+            revert CannotChangeSize();
         }
 
-        position.creationSizeInUSD = newSizeInUSD;
-    }
-
-    function increasePositionCollateral(bytes32 positionID, uint256 sizeChange )
-        external
-        onlyPositionOwner(positionID)
-    {
-        Position storage position = _getPosition(positionID);
-        if(!_canChangeSize(positionID, sizeChange, true)){
-            revert CannotChangeCollateral();
-        }
-
-        postition.size = position.size + sizeChange;
+        position.size = position.size + sizeChange;
         uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
         position.creationSizeInUSD = position.size * btcPrice + position.creationSizeInUSD;
-
     }
 
+    function decreasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
+        Position storage position = _getPosition(positionID);
+        if (!_canChangeSize(positionID, sizeChange, false)) {
+            revert CannotChangeSize();
+        }
+
+        position.size = position.size - sizeChange;
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        position.creationSizeInUSD = position.creationSizeInUSD - position.size * btcPrice;
+    }
+
+    function increasePositionCollateral(bytes32 positionID , uint collateralChange) external onlyPositionOwner(positionID){
+        Position storage position = _getPosition(positionID);
+        if(!_canChangeCollateral(positionID, collateralChange, true)){
+            revert CannotChangeCollateral();
+        }
+        uint256 usdcPrice = _getUSDCPrice()/priceFeed.decimals("USDC");
+        position.collateralInUSD = position.collateralInUSD + collateralChange * usdcPrice;
+    }
+
+    function decreasePositionCollateral(bytes32 positionID , uint collateralChange) external onlyPositionOwner(positionID){
+        Position storage position = _getPosition(positionID);
+        if(!_canChangeCollateral(positionID, collateralChange, false)){
+            revert CannotChangeCollateral();
+        }
+        uint256 usdcPrice = _getUSDCPrice()/priceFeed.decimals("USDC");
+        position.collateralInUSD = position.collateralInUSD - collateralChange * usdcPrice;
+    }
     function liquidate(bytes32 positionID) external {
         Position memory position = getPosition(positionID);
         if (isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
@@ -283,32 +308,29 @@ contract PerpetualVault is ERC4626, Ownable {
         return leverage <= MAX_LEVERAGE;
     }
 
-    function _canChangeSize(bytes32 positionID, uint256 sizeChange , bool isIncerement) public view returns(bool){
+    function _canChangeSize(bytes32 positionID, uint256 sizeChange, bool isIncerement) public view returns (bool) {
         Position memory position = getPosition(positionID);
         int256 pnl = _getPNL(positionID);
         uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
         uint256 adjustedCollateral;
-        if(pnl < 0){
+        if (pnl < 0) {
             adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl);
-        }
-
-        else{
+        } else {
             adjustedCollateral = position.collateralInUSD + uint256(pnl);
         }
 
-        if(adjustedCollateral == 0){
+        if (adjustedCollateral == 0) {
             return false;
         }
         uint256 adjustedSize;
         uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
-        if(isIncerement){
+        if (isIncerement) {
             adjustedSize = position.size * btcPrice + sizeChange;
-        }
-        else{
+        } else {
             adjustedSize = position.size * btcPrice - sizeChange;
         }
-        if(adjustedSize == 0)return false;
-        
+        if (adjustedSize == 0) return false;
+
         uint256 leverage = adjustedSize / adjustedCollateral;
         return leverage <= MAX_LEVERAGE;
     }
