@@ -58,6 +58,7 @@ contract PerpetualVault is ERC4626, Ownable {
     error PositionDoesNotExist();
     error LowPositionCollateral();
     error PositionHealthy();
+    error CannotChangeCollateral();
 
     constructor(IERC20 LPTokenAddress, IERC20 BTCTokenAddress, string memory name, string memory symbol, address owner)
         ERC4626(LPTokenAddress)
@@ -146,6 +147,13 @@ contract PerpetualVault is ERC4626, Ownable {
         onlyPositionOwner(positionID)
     {
         Position storage position = _getPosition(positionID);
+        if(!_canChangeSize(positionID, sizeChange, true)){
+            revert CannotChangeCollateral();
+        }
+
+        postition.size = position.size + sizeChange;
+        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        position.creationSizeInUSD = position.size * btcPrice + position.creationSizeInUSD;
 
     }
 
