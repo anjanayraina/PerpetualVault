@@ -49,7 +49,7 @@ contract ChainLinkPriceFeed is Ownable {
                 && _absoluteValue(price - feed.lastGoodPrice) < MAX_ALLOWED_DEVIATION
         ) {
             feed.lastGoodPrice = price;
-            return price;
+            return price*int256(10**decimals(tokenName));
         }
 
         (roundID, price, startedAt, updatedAt, answeredInRound) = feed.secondaryPriceFeed.latestRoundData();
@@ -58,17 +58,17 @@ contract ChainLinkPriceFeed is Ownable {
                 && _absoluteValue(price - feed.lastGoodPrice) < MAX_ALLOWED_DEVIATION
         ) {
             feed.lastGoodPrice = price;
-            return price;
+            return price*int256(10**decimals(tokenName));
         }
 
-        return feed.lastGoodPrice;
+        return feed.lastGoodPrice*int256(10**decimals(tokenName));
     }
 
     function _absoluteValue(int256 value) internal pure returns (uint256) {
         return uint256(value >= 0 ? value : -value);
     }
 
-    function decimals(string calldata tokenName) external view returns (uint8) {
+    function decimals(string calldata tokenName) public view returns (uint8) {
         return tokenNameToPriceFeed[tokenName].decimals;
     }
 }
