@@ -19,6 +19,7 @@ contract ChainLinkPriceFeedTest is Test {
         feed = new ChainLinkPriceFeed(address(1));
         vm.startPrank(address(1));
         feed.addToken("USDC" , address(usdcOracle1) ,address(usdcOracle2) , 1 , usdcToken.decimals());
+        vm.stopPrank();
 
 
     }
@@ -34,8 +35,24 @@ contract ChainLinkPriceFeedTest is Test {
     function test_ChangeTokenPrice() public {
         vm.startPrank(address(1));
         usdcOracle1.changePrice(int256(11*(10**(usdcOracle1.decimals()-1))));
-        usdcOracle2.changePrice(int256(11*(10**(usdcOracle1.decimals()-1))));
+        usdcOracle2.changePrice(int256(11*(10**(usdcOracle2.decimals()-1))));
         assertEq(feed.getPrice("USDC") , int256(11*(10**(usdcOracle1.decimals()-1))));
+        vm.stopPrank();
+
+    }
+
+    function testFail_UnAuthorizedAccess() public {
+        vm.startPrank(address(2));
+        usdcOracle1.changePrice(int256(11*(10**(usdcOracle1.decimals()-1))));
+        vm.stopPrank();
+    }
+
+    function test_OtherOracleCheck() public {
+        vm.startPrank(address(1));
+        usdcOracle1.changePrice(int256(1100*(10**(usdcOracle1.decimals()-1))));
+        usdcOracle2.changePrice(int256(11*(10**(usdcOracle2.decimals()-1))));
+        assertEq(feed.getPrice("USDC") , int256(11*(10**(usdcOracle1.decimals()-1))));
+        vm.stopPrank();
     }
 
 }
