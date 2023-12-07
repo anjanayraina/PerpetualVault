@@ -18,7 +18,7 @@ contract ChainLinkPriceFeedTest is Test {
         usdcOracle2 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , int256(1*(10**usdcToken.decimals())), "USDC Oracle");
         feed = new ChainLinkPriceFeed(address(1));
         vm.startPrank(address(1));
-        feed.addToken("USDC" , address(usdcOracle1) ,address(usdcOracle2) , 1 , usdcToken.decimals());
+        feed.addToken("USDC" , address(usdcOracle1) ,address(usdcOracle2) , int256(1*(10**usdcToken.decimals())) , usdcToken.decimals());
         vm.stopPrank();
 
 

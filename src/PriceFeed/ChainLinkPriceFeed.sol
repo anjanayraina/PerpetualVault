@@ -47,7 +47,7 @@ contract ChainLinkPriceFeed is Ownable {
         (roundID, price, startedAt, updatedAt, answeredInRound) = feed.secondaryPriceFeed.latestRoundData();
         if (
             roundID != 0 && price >= 0 && updatedAt <= block.timestamp && (block.timestamp - updatedAt) < TIMEOUT
-                && _absoluteValue(price - feed.lastGoodPrice) < MAX_ALLOWED_DEVIATION
+                && _absoluteValue(price - feed.lastGoodPrice) < MAX_ALLOWED_DEVIATION*(10**decimals(tokenName))
         ) {
             feed.lastGoodPrice = price;
             return price ;

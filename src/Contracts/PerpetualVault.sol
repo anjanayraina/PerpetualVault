@@ -71,8 +71,8 @@ contract PerpetualVault is ERC4626, Ownable {
         priceFeed = new ChainLinkPriceFeed(address(this));
         priceFeed.addToken(
             "USDC",
-            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")),
-            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , 1 , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , int256(1*(10**USDCToken.decimals())) , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , USDCToken.decimals() , int256(1*(10**USDCToken.decimals())) , "Oracle")),
             1,
             USDCToken.decimals()
         );
