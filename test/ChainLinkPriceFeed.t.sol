@@ -14,8 +14,8 @@ contract ChainLinkPriceFeedTest is Test {
 
      function setUp() public {
         usdcToken = new USDC(address(1));
-        usdcOracle1 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1 , "USDC Oracle");
-        usdcOracle2 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , 1, "USDC Oracle");
+        usdcOracle1 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , int256(1*(10**usdcToken.decimals())) , "USDC Oracle");
+        usdcOracle2 = new AggregatorV3Contract(address(1) , usdcToken.decimals() , int256(1*(10**usdcToken.decimals())), "USDC Oracle");
         feed = new ChainLinkPriceFeed(address(1));
         vm.startPrank(address(1));
         feed.addToken("USDC" , address(usdcOracle1) ,address(usdcOracle2) , 1 , usdcToken.decimals());
@@ -24,7 +24,9 @@ contract ChainLinkPriceFeedTest is Test {
     }
 
     function test_PriceCheck() public {
-        
+        vm.startPrank(address(1));
+
+        vm.stopPrank();
     }
 
 }

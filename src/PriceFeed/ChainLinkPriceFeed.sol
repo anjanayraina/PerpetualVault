@@ -32,14 +32,6 @@ contract ChainLinkPriceFeed is Ownable {
         feed.decimals = decimal;
     }
 
-    // function changePrimaryFeed(string calldata tokenName , address primaryFeedAddress) external onlyOwner{
-    //     feed.primaryFeedAddress = AggregatorV3Interface(primaryFeedAddress);
-    // }
-
-    // function changeSecondaryFeed(string calldata tokenName , address secondaryFeedAddress) external onlyOwner {
-    //     feed.secondaryFeedAddress = AggregatorV3Interface(secondaryFeedAddress);
-    // }
-
     function getPrice(string calldata tokenName) external view returns (int256) {
         PriceFeeds memory feed = tokenNameToPriceFeed[tokenName];
         (uint80 roundID, int256 price, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) =
