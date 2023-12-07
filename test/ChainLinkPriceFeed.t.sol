@@ -23,10 +23,19 @@ contract ChainLinkPriceFeedTest is Test {
 
     }
 
-    function test_PriceCheck() public {
-        vm.startPrank(address(1));
+    function test_DecimalCheck() public {
+        assertEq(feed.decimals("USDC") , 6);
+    }
 
-        vm.stopPrank();
+    function test_PriceCheck() public {
+        assertEq(feed.getPrice("USDC") , int256(1*(10**usdcToken.decimals())));
+    }
+
+    function test_ChangeTokenPrice() public {
+        vm.startPrank(address(1));
+        usdcOracle1.changePrice(int256(11*(10**(usdcOracle1.decimals()-1))));
+        usdcOracle2.changePrice(int256(11*(10**(usdcOracle1.decimals()-1))));
+        assertEq(feed.getPrice("USDC") , int256(11*(10**(usdcOracle1.decimals()-1))));
     }
 
 }

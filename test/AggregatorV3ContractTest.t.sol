@@ -8,7 +8,7 @@ contract AggregatorV3ContractTest is Test {
     AggregatorV3Contract oracle;
 
     function setUp() public {
-        oracle = new AggregatorV3Contract(address(1) , 6 , int256(100*(10**oracle.decimals())) , "Oracle");
+        oracle = new AggregatorV3Contract(address(1) , 6 , int256(100*(10**6)) , "Oracle");
     }
 
     function test_CheckDecimal() public {
