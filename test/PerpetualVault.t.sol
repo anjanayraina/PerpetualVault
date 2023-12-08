@@ -53,4 +53,19 @@ contract PerpetualVaultTest is Test {
         bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
         assertEq(tempHash, hashValue);
     }
+
+    function test_ReturnPosition() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
+        PerpetualVault.Position memory position = vault.getPosition(hashValue);
+        assertEq(tempHash, hashValue);
+        assertEq(position.collateralInUSD, 100);
+        assertEq(position.creationSizeInUSD, 1000);
+        assertEq(position.isLong, true);
+    }
 }

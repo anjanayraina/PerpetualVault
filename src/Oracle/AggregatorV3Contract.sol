@@ -35,7 +35,7 @@ contract AggregatorV3Contract is Ownable {
         returns (uint80 roundID, int256 _price, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         roundID = _roundId;
-        _price = price ;
+        _price = price;
         startedAt = block.timestamp;
         updatedAt = block.timestamp;
         answeredInRound = 3;
