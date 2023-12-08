@@ -91,7 +91,6 @@ contract PerpetualVault is ERC4626, Ownable {
             int256(100 * (10 ** wBTCToken.decimals())),
             wBTCToken.decimals()
         );
-
     }
 
     modifier onlyPositionOwner(bytes32 positionID) {
