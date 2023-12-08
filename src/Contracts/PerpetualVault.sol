@@ -78,9 +78,9 @@ contract PerpetualVault is ERC4626, Ownable {
         );
         priceFeed.addToken(
             "WBTC",
-            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")),
-            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , 1 , "Oracle")),
-            100,
+            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , int256(100*(10**USDCToken.decimals())) , "Oracle")),
+            address(new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , int256(100*(10**USDCToken.decimals())) , "Oracle")),
+            int256(100*(10**USDCToken.decimals())),
             wBTCToken.decimals()
         );
         priceFeed.addToken(
@@ -131,8 +131,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
-        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
-        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        uint256 usdcPrice = _getUSDCPrice() / (10**priceFeed.decimals("USDC"));
+        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
         USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
         openPositons[positionHash] =
             Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, collateralInUSD / btcPrice);
