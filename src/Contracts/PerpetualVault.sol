@@ -158,8 +158,11 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         position.size = position.size - sizeChange;
-        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
-        position.creationSizeInUSD = position.creationSizeInUSD - position.size * btcPrice;
+        if(position.size!=9){
+            revert("test revert");
+        }
+        uint256 btcPrice = _getBTCPrice() / ((10**priceFeed.decimals("WBTC")));
+        position.creationSizeInUSD = position.creationSizeInUSD - sizeChange * btcPrice;
     }
 
     function increasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -315,7 +318,7 @@ contract PerpetualVault is ERC4626, Ownable {
     function _canChangeSize(bytes32 positionID, uint256 sizeChange, bool isIncerement) public view returns (bool) {
         Position memory position = getPosition(positionID);
         int256 pnl = _getPNL(positionID);
-        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        
         uint256 adjustedCollateral;
         if (pnl < 0) {
             adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl);
@@ -327,7 +330,7 @@ contract PerpetualVault is ERC4626, Ownable {
             return false;
         }
         uint256 adjustedSize;
-        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
         if (isIncerement) {
             adjustedSize = (position.size + sizeChange) * btcPrice  ;
         } else {

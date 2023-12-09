@@ -116,7 +116,7 @@ contract PerpetualVaultTest is Test {
         vm.stopPrank();
     }
 
-        function testFail_IncreasePositionSize() public {
+    function testFail_IncreasePositionSize() public {
         vm.startPrank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
         vm.stopPrank();
@@ -124,13 +124,32 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         vault.increasePositionSize(hashValue , 1000);
-        // PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        // assertEq(position.collateralInUSD, 100);
-        // assertEq(position.creationSizeInUSD, 1100);
-        // assertEq(position.isLong, true);
-        // assertEq(position.positionID ,hashValue);
-        // assertEq(position.positionOwner, address(2));
-        // assertEq(position.size , 11);
-        // vm.stopPrank();
+        vm.stopPrank();
+    }
+
+    function test_DecreasePositionSize() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        PerpetualVault.Position memory position = vault.getPosition(hashValue);
+        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.collateralInUSD, 100);
+        assertEq(position.creationSizeInUSD, 1000);
+        assertEq(position.isLong, true);
+        assertEq(position.positionID, hashValue);
+        assertEq(position.positionOwner, address(2));
+        assertEq(position.size, 1000 / (100));
+        vault.decreasePositionSize(hashValue , 1);
+        position = vault.getPosition(hashValue);
+        assertEq(position.collateralInUSD, 100);
+        assertEq(position.creationSizeInUSD, 900);
+        assertEq(position.isLong, true);
+        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionOwner, address(2));
+        assertEq(position.size , 9);
+        vm.stopPrank(); 
     }
 }
