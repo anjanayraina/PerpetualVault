@@ -117,7 +117,10 @@ contract PerpetualVault is ERC4626, Ownable {
         return super.totalAssets() - _absoluteValue(pnl);
     }
 
-    function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {}
+    function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
+        uint256 shares = super.withdraw(assets , reciever , owner);
+        return shares;
+    }
 
     function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external returns (bytes32) {
         if (collateralInUSD == 0) {
