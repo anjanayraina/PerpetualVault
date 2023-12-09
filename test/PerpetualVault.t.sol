@@ -229,7 +229,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.increasePositionCollateral(hashValue , 20);
+        vault.increasePositionCollateral(hashValue , 200);
         position = vault.getPosition(hashValue);
         // assertEq(position.collateralInUSD, 120);
         // assertEq(position.creationSizeInUSD, 1000);

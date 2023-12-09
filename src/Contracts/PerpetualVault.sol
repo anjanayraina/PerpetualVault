@@ -4,7 +4,7 @@ pragma solidity 0.8.21;
 // wBTC/USDC pool
 // how is the value of a share of the pool set ??
 // GOALS
-// - 1. Liquidity Providers can deposit and withdraw liquidity []
+// - 1. Liquidity Providers can deposit and withdraw liquidity [Done]
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral [Done]
 // - 3. A way to get the realtime price of the asset being traded [Done]
 // - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
@@ -31,8 +31,8 @@ contract PerpetualVault is ERC4626, Ownable {
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
     uint8 public MIN_POSITION_SIZE = 20;
-    IERC20 public wBTCToken;
-    IERC20 public USDCToken;
+    IERC20Metadata public wBTCToken;
+    IERC20Metadata public USDCToken;
     ChainLinkPriceFeed priceFeed;
     uint256 initialBTCInUSDLong;
     uint256 initialBTCInUSDShort;
@@ -49,6 +49,7 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 size;
     }
 
+ 
     mapping(bytes32 => Position) private openPositons;
 
     error MaxLeverageExcedded();
@@ -62,7 +63,7 @@ contract PerpetualVault is ERC4626, Ownable {
     error CannotChangeSize();
     error TestRevert(uint256);
 
-    constructor(IERC20 LPTokenAddress, IERC20 BTCTokenAddress, string memory name, string memory symbol, address owner)
+    constructor(IERC20Metadata LPTokenAddress, IERC20Metadata BTCTokenAddress, string memory name, string memory symbol, address owner)
         ERC4626(LPTokenAddress)
         ERC20(name, symbol)
         Ownable(owner)
@@ -134,8 +135,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
-        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
-        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
+        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC")); 
+        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC")); 
         USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
         openPositons[positionHash] =
             Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, sizeInUSD / btcPrice);
