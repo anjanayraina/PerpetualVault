@@ -16,7 +16,7 @@ contract PerpetualVaultTest is Test {
     function setUp() public {
         usdcToken = new USDC(address(1));
         wBTCToken = new WBTCToken(address(1));
-        vault = new PerpetualVault(usdcToken , wBTCToken , usdcToken.name() , usdcToken.symbol() , address(1) );
+        vault = new PerpetualVault(address(usdcToken) , address(wBTCToken) , usdcToken.name() , usdcToken.symbol() , address(1) );
     }
 
     function test_BTCOracle() public {

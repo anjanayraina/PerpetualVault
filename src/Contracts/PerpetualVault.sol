@@ -26,13 +26,15 @@ import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC462
 import "../PriceFeed/ChainLinkPriceFeed.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Oracle/AggregatorV3Contract.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract PerpetualVault is ERC4626, Ownable {
+    using SafeERC20 for ERC20;
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
-    uint8 public MIN_POSITION_SIZE = 20;
-    IERC20Metadata public wBTCToken;
-    IERC20Metadata public USDCToken;
+    uint8 public MIN_POSITION_SIZE = 100;
+    ERC20 public wBTCToken;
+    ERC20 public USDCToken;
     ChainLinkPriceFeed priceFeed;
     uint256 initialBTCInUSDLong;
     uint256 initialBTCInUSDShort;
@@ -63,13 +65,13 @@ contract PerpetualVault is ERC4626, Ownable {
     error CannotChangeSize();
     error TestRevert(uint256);
 
-    constructor(IERC20Metadata LPTokenAddress, IERC20Metadata BTCTokenAddress, string memory name, string memory symbol, address owner)
-        ERC4626(LPTokenAddress)
+    constructor(address LPTokenAddress, address BTCTokenAddress, string memory name, string memory symbol, address owner)
+        ERC4626(IERC20(LPTokenAddress))
         ERC20(name, symbol)
         Ownable(owner)
     {
-        wBTCToken = BTCTokenAddress;
-        USDCToken = LPTokenAddress;
+        wBTCToken = ERC20(BTCTokenAddress);
+        USDCToken = ERC20(LPTokenAddress);
         priceFeed = new ChainLinkPriceFeed(address(this));
         priceFeed.addToken(
             "USDC",
@@ -137,7 +139,7 @@ contract PerpetualVault is ERC4626, Ownable {
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
         uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC")); 
         uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC")); 
-        USDCToken.transferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
+        USDCToken.safeTransferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
         openPositons[positionHash] =
             Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, sizeInUSD / btcPrice);
         return positionHash;
