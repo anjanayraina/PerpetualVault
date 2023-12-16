@@ -16,7 +16,8 @@ contract PerpetualVaultTest is Test {
     function setUp() public {
         usdcToken = new USDC(address(1));
         wBTCToken = new WBTCToken(address(1));
-        vault = new PerpetualVault(address(usdcToken) , address(wBTCToken) , usdcToken.name() , usdcToken.symbol() , address(1) );
+        vault =
+        new PerpetualVault(address(usdcToken) , address(wBTCToken) , usdcToken.name() , usdcToken.symbol() , address(1) );
     }
 
     function test_BTCOracle() public {
@@ -105,14 +106,14 @@ contract PerpetualVaultTest is Test {
         vm.startPrank(address(2));
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
-        vault.increasePositionSize(hashValue , 1);
+        vault.increasePositionSize(hashValue, 1);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1100);
         assertEq(position.isLong, true);
-        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 11);
+        assertEq(position.size, 11);
         vm.stopPrank();
     }
 
@@ -124,15 +125,15 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.increasePositionSize(hashValue , 1000);
-        assertEq(position.size , 1010);
+        vault.increasePositionSize(hashValue, 1000);
+        assertEq(position.size, 1010);
         vm.stopPrank();
     }
 
@@ -144,22 +145,22 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.decreasePositionSize(hashValue , 1);
+        vault.decreasePositionSize(hashValue, 1);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 900);
         assertEq(position.isLong, true);
-        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 9);
-        vm.stopPrank(); 
+        assertEq(position.size, 9);
+        vm.stopPrank();
     }
 
     function test_IncreasePositionCollateral() public {
@@ -170,22 +171,22 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.increasePositionCollateral(hashValue , 20);
+        vault.increasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 120);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
-        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10);
-        vm.stopPrank(); 
+        assertEq(position.size, 10);
+        vm.stopPrank();
     }
 
     function testFail_IncreasePositionCollateralExceddedLeverage() public {
@@ -196,22 +197,22 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.increasePositionCollateral(hashValue , 2000);
+        vault.increasePositionCollateral(hashValue, 2000);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 120);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
-        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10);
-        vm.stopPrank(); 
+        assertEq(position.size, 10);
+        vm.stopPrank();
     }
 
     function testFail_IncreasePositionCollateralLessTokens() public {
@@ -222,14 +223,14 @@ contract PerpetualVaultTest is Test {
         usdcToken.approve(address(vault), 120 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.increasePositionCollateral(hashValue , 200);
+        vault.increasePositionCollateral(hashValue, 200);
         position = vault.getPosition(hashValue);
         // assertEq(position.collateralInUSD, 120);
         // assertEq(position.creationSizeInUSD, 1000);
@@ -237,10 +238,10 @@ contract PerpetualVaultTest is Test {
         // assertEq(position.positionID ,hashValue);
         // assertEq(position.positionOwner, address(2));
         // assertEq(position.size , 10);
-        vm.stopPrank(); 
+        vm.stopPrank();
     }
 
-function test_DecreasePositionCollateral() public {
+    function test_DecreasePositionCollateral() public {
         vm.startPrank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
         vm.stopPrank();
@@ -248,22 +249,21 @@ function test_DecreasePositionCollateral() public {
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD,1000);
+        assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
         assertEq(position.size, 1000 / (100));
-        vault.decreasePositionCollateral(hashValue , 20);
+        vault.decreasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 80);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);
-        assertEq(position.positionID ,hashValue);
+        assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10);
-        vm.stopPrank(); 
-        }
-
+        assertEq(position.size, 10);
+        vm.stopPrank();
+    }
 }

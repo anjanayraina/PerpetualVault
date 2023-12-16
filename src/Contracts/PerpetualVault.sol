@@ -30,9 +30,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract PerpetualVault is ERC4626, Ownable {
     using SafeERC20 for ERC20;
+
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
     uint8 public MIN_POSITION_SIZE = 100;
+    uint256 public MAX_ALLOWED_BPS = 8_000;
+    uint256 public TOTAL_BPS = 10_000;
     ERC20 public wBTCToken;
     ERC20 public USDCToken;
     ChainLinkPriceFeed priceFeed;
@@ -51,7 +54,6 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 size;
     }
 
- 
     mapping(bytes32 => Position) private openPositons;
 
     error MaxLeverageExcedded();
@@ -65,11 +67,13 @@ contract PerpetualVault is ERC4626, Ownable {
     error CannotChangeSize();
     error TestRevert(uint256);
 
-    constructor(address LPTokenAddress, address BTCTokenAddress, string memory name, string memory symbol, address owner)
-        ERC4626(IERC20(LPTokenAddress))
-        ERC20(name, symbol)
-        Ownable(owner)
-    {
+    constructor(
+        address LPTokenAddress,
+        address BTCTokenAddress,
+        string memory name,
+        string memory symbol,
+        address owner
+    ) ERC4626(IERC20(LPTokenAddress)) ERC20(name, symbol) Ownable(owner) {
         wBTCToken = ERC20(BTCTokenAddress);
         USDCToken = ERC20(LPTokenAddress);
         priceFeed = new ChainLinkPriceFeed(address(this));
@@ -121,7 +125,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
-        uint256 shares = super.withdraw(assets , reciever , owner);
+        uint256 shares = super.withdraw(assets, reciever, owner);
         return shares;
     }
 
@@ -137,24 +141,38 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
-        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC")); 
-        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC")); 
-        USDCToken.safeTransferFrom(msg.sender, address(this), (collateralInUSD + _getGasStipend()) / usdcPrice);
-        openPositons[positionHash] =
-            Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, sizeInUSD / btcPrice);
+        USDCToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            ((collateralInUSD + _getGasStipend()) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice()
+        );
+        uint256 btcSize = (sizeInUSD * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+        openPositons[positionHash] = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, btcSize);
+        if (isLong) {
+            initialBTCInUSDLong += sizeInUSD;
+            btcSizeOpenedLong += btcSize;
+        } else {
+            initialBTCInUSDShort += sizeInUSD;
+            btcSizeOpenedShort += btcSize;
+        }
         return positionHash;
     }
 
-    function increasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
+    function increasePositionSize(bytes32 positionID, uint256 sizeChangeInUSD) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
-        if (!_canChangeSize(positionID, sizeChange, true)) {
+        if (!_canChangeSize(positionID, sizeChangeInUSD, true)) {
             revert CannotChangeSize();
         }
 
-        position.size = position.size + sizeChange;
-        uint256 btcPrice = _getBTCPrice() / ((10**priceFeed.decimals("WBTC")));
-        position.creationSizeInUSD = position.size * btcPrice ;
-        
+        position.size = position.size + sizeChangeInUSD;
+        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+        if (position.isLong) {
+            initialBTCInUSDLong += sizeChangeInUSD;
+            btcSizeOpenedLong += btcSize;
+        } else {
+            initialBTCInUSDShort += sizeChangeInUSD;
+            btcSizeOpenedShort += btcSize;
+        }
     }
 
     function decreasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
@@ -163,7 +181,7 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeSize();
         }
         position.size = position.size - sizeChange;
-        uint256 btcPrice = _getBTCPrice() / ((10**priceFeed.decimals("WBTC")));
+        uint256 btcPrice = _getBTCPrice() / ((10 ** priceFeed.decimals("WBTC")));
         position.creationSizeInUSD = position.creationSizeInUSD - sizeChange * btcPrice;
     }
 
@@ -175,7 +193,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (!_canChangeCollateral(positionID, collateralChange, true)) {
             revert CannotChangeCollateral();
         }
-        uint256 usdcPrice = _getUSDCPrice() / (10**priceFeed.decimals("USDC"));
+        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
         position.collateralInUSD = position.collateralInUSD + collateralChange * usdcPrice;
     }
 
@@ -187,7 +205,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (!_canChangeCollateral(positionID, collateralChange, false)) {
             revert CannotChangeCollateral();
         }
-        uint256 usdcPrice = _getUSDCPrice() / (10**priceFeed.decimals("USDC"));
+        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
         position.collateralInUSD = position.collateralInUSD - collateralChange * usdcPrice;
     }
 
@@ -210,8 +228,12 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         uint256 gasStipend = _getGasStipend();
-        USDCToken.transferFrom(address(this), position.positionOwner, amountToReturn / usdcPrice);
-        USDCToken.transferFrom(address(this), msg.sender, gasStipend);
+        USDCToken.safeTransferFrom(address(this), position.positionOwner, amountToReturn / usdcPrice);
+        USDCToken.safeTransferFrom(address(this), msg.sender, gasStipend);
+    }
+
+    function getUsableBalance() public returns (uint256) {
+        return (USDCToken.balanceOf(address(this)));
     }
 
     function _getBTCPrice() internal view returns (uint256) {
@@ -320,7 +342,7 @@ contract PerpetualVault is ERC4626, Ownable {
     function _canChangeSize(bytes32 positionID, uint256 sizeChange, bool isIncerement) public view returns (bool) {
         Position memory position = getPosition(positionID);
         int256 pnl = _getPNL(positionID);
-        
+
         uint256 adjustedCollateral;
         if (pnl < 0) {
             adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl);
@@ -332,14 +354,12 @@ contract PerpetualVault is ERC4626, Ownable {
             return false;
         }
         uint256 adjustedSize;
-        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
-        if(btcPrice!= 100){
-            revert("Test Revert");
-        }
+        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
+
         if (isIncerement) {
-            adjustedSize = (position.size + sizeChange) * btcPrice  ;
+            adjustedSize += sizeChange;
         } else {
-            adjustedSize = (position.size - sizeChange) * btcPrice;
+            adjustedSize -= sizeChange;
         }
         if (adjustedSize == 0) return false;
 
