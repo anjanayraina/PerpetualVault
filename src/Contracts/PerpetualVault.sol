@@ -175,14 +175,21 @@ contract PerpetualVault is ERC4626, Ownable {
         }
     }
 
-    function decreasePositionSize(bytes32 positionID, uint256 sizeChange) external onlyPositionOwner(positionID) {
+    function decreasePositionSize(bytes32 positionID, uint256 sizeChangeInUSD) external onlyPositionOwner(positionID) {
         Position storage position = _getPosition(positionID);
-        if (!_canChangeSize(positionID, sizeChange, false)) {
+        if (!_canChangeSize(positionID, sizeChangeInUSD, false)) {
             revert CannotChangeSize();
         }
-        position.size = position.size - sizeChange;
-        uint256 btcPrice = _getBTCPrice() / ((10 ** priceFeed.decimals("WBTC")));
-        position.creationSizeInUSD = position.creationSizeInUSD - sizeChange * btcPrice;
+
+        position.size = position.size - sizeChangeInUSD;
+        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+        if (position.isLong) {
+            initialBTCInUSDLong -= sizeChangeInUSD;
+            btcSizeOpenedLong -= btcSize;
+        } else {
+            initialBTCInUSDShort -= sizeChangeInUSD;
+            btcSizeOpenedShort -= btcSize;
+        }
     }
 
     function increasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -193,8 +200,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (!_canChangeCollateral(positionID, collateralChange, true)) {
             revert CannotChangeCollateral();
         }
-        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
-        position.collateralInUSD = position.collateralInUSD + collateralChange * usdcPrice;
+        position.collateralInUSD = position.collateralInUSD + (collateralChange * _getUSDCPrice())/(10 ** priceFeed.decimals("USDC"));
     }
 
     function decreasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -206,7 +212,7 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeCollateral();
         }
         uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
-        position.collateralInUSD = position.collateralInUSD - collateralChange * usdcPrice;
+        position.collateralInUSD = position.collateralInUSD - (collateralChange * _getUSDCPrice())/(10 ** priceFeed.decimals("USDC"));
     }
 
     function liquidate(bytes32 positionID) external {
