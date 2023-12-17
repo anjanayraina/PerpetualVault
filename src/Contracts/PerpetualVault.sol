@@ -239,7 +239,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function getUsableBalance() public returns (uint256) {
-        return (USDCToken.balanceOf(address(this)));
+        uint currentBalance = USDCToken.balanceOf(address(this));
     }
 
     function _getBTCPrice() internal view returns (uint256) {
