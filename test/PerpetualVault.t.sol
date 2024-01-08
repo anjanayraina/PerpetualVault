@@ -106,14 +106,14 @@ contract PerpetualVaultTest is Test {
         vm.startPrank(address(2));
         usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(100, 1000, true);
-        vault.increasePositionSize(hashValue, 1);
+        vault.increasePositionSize(hashValue, 100);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1100);
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 11);
+        assertEq(position.size, 11 * (10** wBTCToken.decimals()));
         vm.stopPrank();
     }
 

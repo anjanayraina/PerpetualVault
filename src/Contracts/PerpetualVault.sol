@@ -164,9 +164,9 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeSize();
         }
 
-        position.size = position.size + sizeChangeInUSD;
-         uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
-        btcSize = btcSize / _getBTCPrice();
+        position.creationSizeInUSD = position.creationSizeInUSD + sizeChangeInUSD;
+        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
+        position.size = position.size + btcSize;
         if (position.isLong) {
             initialBTCInUSDLong += sizeChangeInUSD;
             btcSizeOpenedLong += btcSize;
