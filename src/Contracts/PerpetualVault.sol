@@ -146,7 +146,7 @@ contract PerpetualVault is ERC4626, Ownable {
             address(this),
             ((collateralInUSD + _getGasStipend()) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice()
         );
-        uint256 btcSize = (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+        uint256 btcSize = (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
         openPositons[positionHash] = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, btcSize);
         if (isLong) {
             initialBTCInUSDLong += sizeInUSD;
@@ -165,7 +165,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         position.size = position.size + sizeChangeInUSD;
-        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+         uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
+        btcSize = btcSize / _getBTCPrice();
         if (position.isLong) {
             initialBTCInUSDLong += sizeChangeInUSD;
             btcSizeOpenedLong += btcSize;
@@ -182,7 +183,7 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         position.size = position.size - sizeChangeInUSD;
-        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC"))) / _getBTCPrice();
+        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
         if (position.isLong) {
             initialBTCInUSDLong -= sizeChangeInUSD;
             btcSizeOpenedLong -= btcSize;
