@@ -177,7 +177,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 1000 / (100));
+        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
         vault.increasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 120);
@@ -185,7 +185,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 10);
+        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
         vm.stopPrank();
     }
 
@@ -255,7 +255,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 1000 / (100));
+        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
         vault.decreasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 80);
@@ -263,7 +263,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 10);
+        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
         vm.stopPrank();
     }
 }
