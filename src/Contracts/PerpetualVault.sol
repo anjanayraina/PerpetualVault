@@ -7,10 +7,10 @@ pragma solidity 0.8.21;
 // - 1. Liquidity Providers can deposit and withdraw liquidity [Done]
 // - 2. Traders can open a perpetual position for BTC, with a given size and collateral [Done]
 // - 3. A way to get the realtime price of the asset being traded [Done]
-// - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity []
+// - 4. Traders cannot utilize more than a configured percentage of the deposited liquidity [Done]
 // - 5. Traders can increase the size of a perpetual position [Done]
 // - 6. Traders can increase the collateral of a perpetual position [Done]
-// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  []
+// - 7. Liquidity providers cannot withdraw liquidity that is reserved for positions  [Done]
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL [Done]
 // - 9. Traders can decrease the collateral of their position [Done]
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function [Done]
@@ -33,6 +33,9 @@ contract PerpetualVault is ERC4626, Ownable {
 
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
+    uint8 public constant POSITION_OPENING_FEE = 10;
+    uint8 public constant POSITION_CHANGE_BPS = 100;
+    uint8 public constant TOTAL_POSITION_CHANGE_BPS = 10000;
     uint8 public MIN_POSITION_SIZE = 100;
     uint256 public MAX_ALLOWED_BPS = 8_000;
     uint256 public TOTAL_BPS = 10_000;
