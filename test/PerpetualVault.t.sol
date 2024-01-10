@@ -177,7 +177,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
+        assertEq(position.size, 10 * (10 ** wBTCToken.decimals()));
         vault.increasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 120);
@@ -185,7 +185,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
+        assertEq(position.size, 10 * (10 ** wBTCToken.decimals()));
         vm.stopPrank();
     }
 
@@ -232,12 +232,6 @@ contract PerpetualVaultTest is Test {
         assertEq(position.size, 1000 / (100));
         vault.increasePositionCollateral(hashValue, 200);
         position = vault.getPosition(hashValue);
-        // assertEq(position.collateralInUSD, 120);
-        // assertEq(position.creationSizeInUSD, 1000);
-        // assertEq(position.isLong, true);
-        // assertEq(position.positionID ,hashValue);
-        // assertEq(position.positionOwner, address(2));
-        // assertEq(position.size , 10);
         vm.stopPrank();
     }
 
@@ -255,7 +249,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
+        assertEq(position.size, 10 * (10 ** wBTCToken.decimals()));
         vault.decreasePositionCollateral(hashValue, 20);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 80);
@@ -263,7 +257,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size , 10 * (10**wBTCToken.decimals()) );
+        assertEq(position.size, 10 * (10 ** wBTCToken.decimals()));
         vm.stopPrank();
     }
 }
