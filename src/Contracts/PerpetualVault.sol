@@ -43,7 +43,6 @@ contract PerpetualVault is ERC4626, Ownable {
     uint256 initialBTCInUSDShort;
     uint256 btcSizeOpenedLong;
     uint256 btcSizeOpenedShort;
-    uint256 initialBTCInUSD;
 
     struct Position {
         address positionOwner;
@@ -66,7 +65,8 @@ contract PerpetualVault is ERC4626, Ownable {
     error CannotChangeCollateral();
     error CannotChangeSize();
     error TestRevert(uint256);
-
+    error NotEnoughLiquidity();
+    error RedeemNotSupported();
     constructor(
         address LPTokenAddress,
         address BTCTokenAddress,
@@ -124,9 +124,24 @@ contract PerpetualVault is ERC4626, Ownable {
         return super.totalAssets() - _absoluteValue(pnl);
     }
 
+   
+
     function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
+        uint256 liquidityUsedIdle = getUsableBalance();
+        if(liquidityUsedIdle < assets ){
+            revert NotEnoughLiquidity();
+        }
         uint256 shares = super.withdraw(assets, reciever, owner);
         return shares;
+    }
+
+    
+    function redeem(
+        uint256,
+        address,
+        address
+    ) public pure override(ERC4626) returns (uint256) {
+        revert RedeemNotSupported();
     }
 
     function openPosition(uint256 collateralInUSD, uint256 sizeInUSD, bool isLong) external returns (bytes32) {
@@ -182,14 +197,15 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeSize();
         }
 
-        position.size = position.size - sizeChangeInUSD;
-        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
+        // position.size = position.size - sizeChangeInUSD;
+        
+        // uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) ;
         if (position.isLong) {
-            initialBTCInUSDLong -= sizeChangeInUSD;
-            btcSizeOpenedLong -= btcSize;
+            // initialBTCInUSDLong -= sizeChangeInUSD;
+            // btcSizeOpenedLong -= btcSize;
         } else {
-            initialBTCInUSDShort -= sizeChangeInUSD;
-            btcSizeOpenedShort -= btcSize;
+            // initialBTCInUSDShort -= sizeChangeInUSD;
+            // btcSizeOpenedShort -= btcSize;
         }
     }
 
@@ -241,6 +257,7 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function getUsableBalance() public returns (uint256) {
         uint currentBalance = USDCToken.balanceOf(address(this));
+        return (currentBalance*MAX_ALLOWED_BPS)/TOTAL_BPS;
     }
 
     function _getBTCPrice() internal view returns (uint256) {

@@ -151,7 +151,7 @@ contract PerpetualVaultTest is Test {
         assertEq(position.isLong, true);
         assertEq(position.positionID, hashValue);
         assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 1000 / (100));
+        assertEq(position.size, 1000 / (100) * (10 ** wBTCToken.decimals()));
         vault.decreasePositionSize(hashValue, 1);
         position = vault.getPosition(hashValue);
         assertEq(position.collateralInUSD, 100);
