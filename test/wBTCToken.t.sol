@@ -39,7 +39,7 @@ contract wBTCTokenTest is Test {
     }
 
     function test_Transfer(address to, uint256 amount) public {
-        vm.assume(to!=address(0));
+        vm.assume(to != address(0));
         vm.prank(address(1));
         contractAddress.mint(address(2), amount);
         vm.prank(address(2));

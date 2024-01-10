@@ -28,7 +28,7 @@ contract USDCTokenTest is Test {
     }
 
     function test_Mint(uint256 amount, address testAddr) public {
-        vm.assume(testAddr!=address(0));
+        vm.assume(testAddr != address(0));
         vm.prank(address(1));
         contractAddress.mint(testAddr, amount);
         assertEq(contractAddress.balanceOf(testAddr), amount);

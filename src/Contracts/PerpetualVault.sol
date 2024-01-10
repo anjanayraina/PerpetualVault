@@ -67,6 +67,7 @@ contract PerpetualVault is ERC4626, Ownable {
     error TestRevert(uint256);
     error NotEnoughLiquidity();
     error RedeemNotSupported();
+
     constructor(
         address LPTokenAddress,
         address BTCTokenAddress,
@@ -124,23 +125,16 @@ contract PerpetualVault is ERC4626, Ownable {
         return super.totalAssets() - _absoluteValue(pnl);
     }
 
-   
-
     function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
         uint256 liquidityUsedIdle = getUsableBalance();
-        if(liquidityUsedIdle < assets ){
+        if (liquidityUsedIdle < assets) {
             revert NotEnoughLiquidity();
         }
         uint256 shares = super.withdraw(assets, reciever, owner);
         return shares;
     }
 
-    
-    function redeem(
-        uint256,
-        address,
-        address
-    ) public pure override(ERC4626) returns (uint256) {
+    function redeem(uint256, address, address) public pure override(ERC4626) returns (uint256) {
         revert RedeemNotSupported();
     }
 
@@ -161,7 +155,8 @@ contract PerpetualVault is ERC4626, Ownable {
             address(this),
             ((collateralInUSD + _getGasStipend()) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice()
         );
-        uint256 btcSize = (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
+        uint256 btcSize =
+            (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
         openPositons[positionHash] = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, btcSize);
         if (isLong) {
             initialBTCInUSDLong += sizeInUSD;
@@ -180,7 +175,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         position.creationSizeInUSD = position.creationSizeInUSD + sizeChangeInUSD;
-        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) / _getBTCPrice();
+        uint256 btcSize =
+            (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
         position.size = position.size + btcSize;
         if (position.isLong) {
             initialBTCInUSDLong += sizeChangeInUSD;
@@ -197,15 +193,15 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeSize();
         }
 
-        // position.size = position.size - sizeChangeInUSD;
-        
-        // uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10** wBTCToken.decimals()) ) ;
+        position.size = position.size - sizeChangeInUSD;
+
+        uint256 btcSize = (sizeChangeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals()));
         if (position.isLong) {
-            // initialBTCInUSDLong -= sizeChangeInUSD;
-            // btcSizeOpenedLong -= btcSize;
+            initialBTCInUSDLong -= sizeChangeInUSD;
+            btcSizeOpenedLong -= btcSize;
         } else {
-            // initialBTCInUSDShort -= sizeChangeInUSD;
-            // btcSizeOpenedShort -= btcSize;
+            initialBTCInUSDShort -= sizeChangeInUSD;
+            btcSizeOpenedShort -= btcSize;
         }
     }
 
@@ -217,7 +213,8 @@ contract PerpetualVault is ERC4626, Ownable {
         if (!_canChangeCollateral(positionID, collateralChange, true)) {
             revert CannotChangeCollateral();
         }
-        position.collateralInUSD = position.collateralInUSD + (collateralChange * _getUSDCPrice())/(10 ** priceFeed.decimals("USDC"));
+        position.collateralInUSD =
+            position.collateralInUSD + (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
     }
 
     function decreasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -229,7 +226,8 @@ contract PerpetualVault is ERC4626, Ownable {
             revert CannotChangeCollateral();
         }
         uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
-        position.collateralInUSD = position.collateralInUSD - (collateralChange * _getUSDCPrice())/(10 ** priceFeed.decimals("USDC"));
+        position.collateralInUSD =
+            position.collateralInUSD - (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
     }
 
     function liquidate(bytes32 positionID) external {
@@ -256,8 +254,8 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function getUsableBalance() public returns (uint256) {
-        uint currentBalance = USDCToken.balanceOf(address(this));
-        return (currentBalance*MAX_ALLOWED_BPS)/TOTAL_BPS;
+        uint256 currentBalance = USDCToken.balanceOf(address(this));
+        return (currentBalance * MAX_ALLOWED_BPS) / TOTAL_BPS;
     }
 
     function _getBTCPrice() internal view returns (uint256) {
