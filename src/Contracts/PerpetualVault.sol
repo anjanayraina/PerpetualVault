@@ -235,7 +235,7 @@ contract PerpetualVault is ERC4626, Ownable {
         if (_isHealthyPosition(positionID) && position.positionOwner != msg.sender) {
             revert PositionHealthy();
         }
-        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
+        uint256 usdcPrice = _getUSDCPrice();
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
         if (pnl < 0) {
@@ -249,8 +249,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         uint256 gasStipend = _getGasStipend();
-        USDCToken.safeTransferFrom(address(this), position.positionOwner, amountToReturn / usdcPrice);
-        USDCToken.safeTransferFrom(address(this), msg.sender, gasStipend);
+        USDCToken.safeTransfer( position.positionOwner, (amountToReturn*(10**priceFeed.decimals("USDC"))) / usdcPrice);
+        USDCToken.safeTransfer( msg.sender, gasStipend);
     }
 
     function getUsableBalance() public returns (uint256) {
@@ -275,7 +275,7 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
-        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
             return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));

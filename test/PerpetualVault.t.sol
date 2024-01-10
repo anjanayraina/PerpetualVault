@@ -260,4 +260,21 @@ contract PerpetualVaultTest is Test {
         assertEq(position.size, 10 * (10 ** wBTCToken.decimals()));
         vm.stopPrank();
     }
+
+    function test_openPositionLiquidateOwner() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        uint256 balanceBefore  = usdcToken.balanceOf(address(2));
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
+        assertEq(tempHash, hashValue);
+        vault.liquidate(hashValue);
+        assertEq(usdcToken.balanceOf(address(vault)) , 0);
+        assertEq(usdcToken.balanceOf(address(2)) , balanceBefore);
+        assertEq(vault.getPosition(hashValue).collateralInUSD ,0 );
+        vm.stopPrank();
+    }
 }
