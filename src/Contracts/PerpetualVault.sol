@@ -20,7 +20,6 @@ pragma solidity 0.8.21;
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
 // - 15. Implement Double Oracle System in the contract [Done]
 // - 16. Interagte the Double Oracle System in PerpetualVault Contract [Done]
-// problem with wBTC decimals
 
 import "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC4626.sol";
 import "../PriceFeed/ChainLinkPriceFeed.sol";
@@ -33,12 +32,12 @@ contract PerpetualVault is ERC4626, Ownable {
 
     uint8 public constant MAX_LEVERAGE = 20;
     uint8 public constant GAS_STIPEND = 5;
-    uint8 public constant POSITION_OPENING_FEE = 10;
+    uint16 public constant POSITION_OPENING_FEE = 500;
     uint8 public constant POSITION_CHANGE_BPS = 100;
-    uint8 public constant TOTAL_POSITION_CHANGE_BPS = 10000;
     uint8 public MIN_POSITION_SIZE = 100;
     uint256 public MAX_ALLOWED_BPS = 8_000;
     uint256 public TOTAL_BPS = 10_000;
+    uint256 constant borrowingPerSecond = 315_360_000;
     ERC20 public wBTCToken;
     ERC20 public USDCToken;
     ChainLinkPriceFeed priceFeed;
@@ -54,6 +53,7 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 creationSizeInUSD;
         bytes32 positionID;
         uint256 size;
+        uint256 creationTime;
     }
 
     mapping(bytes32 => Position) private openPositons;
@@ -160,7 +160,8 @@ contract PerpetualVault is ERC4626, Ownable {
         );
         uint256 btcSize =
             (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
-        openPositons[positionHash] = Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, btcSize);
+        openPositons[positionHash] =
+            Position(msg.sender, collateralInUSD, isLong, sizeInUSD, positionHash, btcSize, block.timestamp);
         if (isLong) {
             initialBTCInUSDLong += sizeInUSD;
             btcSizeOpenedLong += btcSize;
@@ -252,8 +253,10 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         uint256 gasStipend = _getGasStipend();
-        USDCToken.safeTransfer( position.positionOwner, (amountToReturn*(10**priceFeed.decimals("USDC"))) / usdcPrice);
-        USDCToken.safeTransfer( msg.sender, gasStipend);
+        USDCToken.safeTransfer(
+            position.positionOwner, (amountToReturn * (10 ** priceFeed.decimals("USDC"))) / usdcPrice
+        );
+        USDCToken.safeTransfer(msg.sender, gasStipend);
     }
 
     function getUsableBalance() public returns (uint256) {
@@ -278,7 +281,7 @@ contract PerpetualVault is ERC4626, Ownable {
 
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
-        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
+        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
             return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
@@ -390,5 +393,10 @@ contract PerpetualVault is ERC4626, Ownable {
 
         uint256 leverage = adjustedSize / adjustedCollateral;
         return leverage <= MAX_LEVERAGE;
+    }
+
+    function _getBorrowingFee(bytes32 positionID) internal view returns (uint256) {
+        Position memory position = _getPosition(positionID);
+        return (position.size * (block.timestamp - position.creationTime)) / borrowingPerSecond;
     }
 }
