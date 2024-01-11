@@ -157,8 +157,7 @@ contract PerpetualVault is ERC4626, Ownable {
         USDCToken.safeTransferFrom(
             msg.sender,
             address(this),
-            ((collateralInUSD + _getGasStipend() + calculatePositionOpeningFee(collateralInUSD) ) *(10 ** USDCToken.decimals() * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice())
-        );
+            (((collateralInUSD + calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
         uint256 btcSize =
             (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
         openPositons[positionHash] =
