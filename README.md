@@ -1,66 +1,31 @@
-## Foundry
+## PerpetualVault
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-Foundry consists of:
+This is an implementation of [mission #1](https://guardianaudits.notion.site/Mission-1-Perpetuals-028ca44faa264d679d6789d5461cfb13)
+from [Gateway](https://twitter.com/intogateway) (Advanced open course for auditors)
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+# How does the system work?
+Our perpetual contract allows traders to open long or short positions on BTC with a given size and collateral, while also enabling liquidity providers to deposit and withdraw liquidity. The contract uses Chainlink's AggregatorV3Interface to fetch real-time BTC/USD price feed, ensuring accurate and reliable pricing data for the trading operations.
 
-## Documentation
+# How to run
+1.  **Install Foundry**
 
-https://book.getfoundry.sh/
+First run the command below to get foundryup, the Foundry toolchain installer:
 
-## Usage
-
-### Build
-
-```shell
-$ forge build
+``` bash
+curl -L https://foundry.paradigm.xyz | bash
 ```
 
-### Test
+Then, in a new terminal session or after reloading your PATH, run it to get the latest forge and cast binaries:
 
-```shell
-$ forge test
+``` console
+foundryup
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+2. **Clone This Repo and install dependencies**
+``` 
+git clone https://github.com/Datswishty/yapex
+cd yapex
+forge install
+forge test
 ```
