@@ -24,8 +24,8 @@ foundryup
 
 2. **Clone This Repo and install dependencies**
 ``` 
-git clone https://github.com/Datswishty/yapex
-cd yapex
+git clone https://github.com/anjanayraina/PerpetualVault.git
+cd PerpetualVault
 forge install
 forge test
 ```
