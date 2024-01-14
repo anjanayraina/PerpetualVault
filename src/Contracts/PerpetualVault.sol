@@ -265,8 +265,8 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 usdcPrice = _getUSDCPrice();
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
-        console.log("Collateral %d" , position.collateralInUSD);
-        console.logInt(pnl);
+        // console.log("Collateral %d" , position.collateralInUSD);
+        // console.logInt(pnl);
 
         if (pnl < 0) {
             if (_absoluteValue(pnl) > position.collateralInUSD) {
@@ -278,8 +278,6 @@ contract PerpetualVault is ERC4626, Ownable {
             amountToReturn = position.collateralInUSD + uint256(pnl);
         }
         amountToReturn = amountToReturn/100;
-        console.log("amount to return %d" , amountToReturn);
-        console.log("USDC %d" , usdcPrice);
         uint256 gasStipend = _getGasStipend();
         USDCToken.safeTransfer(
             position.positionOwner, (amountToReturn * (10 ** priceFeed.decimals("USDC"))) / usdcPrice
@@ -380,20 +378,24 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 adjustedCollateral;
         if (pnl < 0) {
             if (isIncement) {
-                adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl) + sizeChange;
+                adjustedCollateral = (position.collateralInUSD +sizeChange)*(10**wBTCToken.decimals()) - _absoluteValue(pnl) ;
             } else {
-                adjustedCollateral = position.collateralInUSD - _absoluteValue(pnl) - sizeChange;
+                adjustedCollateral = (position.collateralInUSD -sizeChange)*(10**wBTCToken.decimals()) - _absoluteValue(pnl);
             }
         } else {
             if (isIncement) {
-                adjustedCollateral = position.collateralInUSD + uint256(pnl) + sizeChange;
+                adjustedCollateral = (position.collateralInUSD +sizeChange)*(10**wBTCToken.decimals()) + uint(pnl);
             } else {
-                adjustedCollateral = position.collateralInUSD + uint256(pnl) - sizeChange;
+                adjustedCollateral = (position.collateralInUSD -sizeChange)*(10**wBTCToken.decimals()) + uint(pnl);
             }
         }
         if (adjustedCollateral == 0) return false;
-        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
-        uint256 leverage = (position.size * btcPrice) / adjustedCollateral;
+        uint256 btcPrice = _getBTCPrice() ;
+        uint256 leverage = (position.size * btcPrice) / (adjustedCollateral*10**wBTCToken.decimals());
+        console.log("leverage: %d" , leverage);
+        console.log("adjusted collateral %d" , adjustedCollateral);
+        console.log("btcPrice %d" , btcPrice);
+
         return leverage <= MAX_LEVERAGE;
     }
 
