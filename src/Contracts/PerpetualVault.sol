@@ -14,7 +14,7 @@ pragma solidity 0.8.21;
 // - 8. Traders can decrease the size of their position and realize a proportional amount of their PnL [Done]
 // - 9. Traders can decrease the collateral of their position [Done]
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function [Done]
-// - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function []
+// - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function [Done]
 // - 12. Traders can never modify their position such that it would make the position liquidatable [Done]
 // - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
 // - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
@@ -240,8 +240,9 @@ contract PerpetualVault is ERC4626, Ownable {
         }
         position.collateralInUSD =
             position.collateralInUSD + (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
+        uint256 feeOnCollateralChange = (calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnCollateralChange);
 
-        
     }
 
     function decreasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -255,6 +256,8 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
         position.collateralInUSD =
             position.collateralInUSD - (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
+        uint256 feeOnCollateralChange = (calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnCollateralChange);
     }
 
     function liquidate(bytes32 positionID) external {
@@ -265,8 +268,6 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 usdcPrice = _getUSDCPrice();
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
-        // console.log("Collateral %d" , position.collateralInUSD);
-        // console.logInt(pnl);
 
         if (pnl < 0) {
             if (_absoluteValue(pnl) > position.collateralInUSD) {
@@ -390,8 +391,8 @@ contract PerpetualVault is ERC4626, Ownable {
             }
         }
         if (adjustedCollateral == 0) return false;
-        uint256 btcPrice = _getBTCPrice() ;
-        uint256 leverage = (position.size * btcPrice) / (adjustedCollateral*10**wBTCToken.decimals());
+        uint256 btcPrice = _getBTCPrice()/10**wBTCToken.decimals() ;
+        uint256 leverage = (position.size * btcPrice) / (adjustedCollateral);
         console.log("leverage: %d" , leverage);
         console.log("adjusted collateral %d" , adjustedCollateral);
         console.log("btcPrice %d" , btcPrice);
