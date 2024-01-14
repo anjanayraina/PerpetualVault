@@ -146,6 +146,7 @@ contract PerpetualVaultTest is Test {
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         PerpetualVault.Position memory position = vault.getPosition(hashValue);
         assertEq(position.creationSizeInUSD, 1000);
+        assertEq(vault._getPNL(hashValue) , 0);
         assertEq(position.collateralInUSD, 100);
         assertEq(position.creationSizeInUSD, 1000);
         assertEq(position.isLong, true);

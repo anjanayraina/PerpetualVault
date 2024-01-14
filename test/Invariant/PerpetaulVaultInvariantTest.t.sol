@@ -56,11 +56,11 @@ contract PerpetualVaultInvariantTest is Test {
         vm.assume((collateral) / (10 ** (usdcToken.decimals() + 1)) < type(uint256).max);
         vm.assume(size / collateral < 21);
         vm.startPrank(address(1));
-        usdcToken.mint(address(2), (collateral + 1) * (10 ** usdcToken.decimals()));
+        usdcToken.mint(address(2), (collateral *2) * (10 ** usdcToken.decimals()));
         vm.stopPrank();
         vm.startPrank(address(2));
         uint256 prevBalance = usdcToken.balanceOf(address(vault));
-        usdcToken.approve(address(vault), collateral * (10 ** usdcToken.decimals()));
+        usdcToken.approve(address(vault), (collateral*2) * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(collateral, size, true);
         bytes32 tempHash = vault._getPositionHash(address(2), collateral, size, true);
         assertEq(tempHash, hashValue);

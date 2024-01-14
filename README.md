@@ -5,7 +5,7 @@ This is an implementation of [mission #1](https://guardianaudits.notion.site/Mis
 from [Gateway](https://twitter.com/intogateway) (Advanced open course for auditors)
 
 # How does the system work?
-Our perpetual contract allows traders to open long or short positions on BTC with a given size and collateral, while also enabling liquidity providers to deposit and withdraw liquidity. The contract uses Chainlink's AggregatorV3Interface to fetch real-time BTC/USD price feed, ensuring accurate and reliable pricing data for the trading operations.
+Our perpetual contract allows traders to open long or short positions on BTC with a given size and collateral, while also enabling liquidity providers to deposit and withdraw liquidity. The contract simulates Chainlink's AggregatorV3Interface to fetch real-time BTC/USD price feed, ensuring accurate and reliable pricing data for the trading operations.
 
 # How to run
 1.  **Install Foundry**

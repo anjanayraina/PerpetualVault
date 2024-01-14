@@ -366,7 +366,6 @@ contract PerpetualVault is ERC4626, Ownable {
     function _canChangeCollateral(bytes32 positionID, uint256 sizeChange, bool isIncement) public view returns (bool) {
         Position memory position = getPosition(positionID);
         int256 pnl = _getPNL(positionID);
-        uint256 usdcPrice = _getUSDCPrice() / priceFeed.decimals("USDC");
         uint256 adjustedCollateral;
         if (pnl < 0) {
             if (isIncement) {
@@ -382,7 +381,7 @@ contract PerpetualVault is ERC4626, Ownable {
             }
         }
         if (adjustedCollateral == 0) return false;
-        uint256 btcPrice = _getBTCPrice() / priceFeed.decimals("WBTC");
+        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
         uint256 leverage = (position.size * btcPrice) / adjustedCollateral;
         return leverage <= MAX_LEVERAGE;
     }
