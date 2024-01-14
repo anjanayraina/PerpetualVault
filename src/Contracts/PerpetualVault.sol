@@ -26,6 +26,7 @@ import "../PriceFeed/ChainLinkPriceFeed.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Oracle/AggregatorV3Contract.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "forge-std/console.sol";
 
 contract PerpetualVault is ERC4626, Ownable {
     using SafeERC20 for ERC20;
@@ -154,6 +155,8 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
+        
+        console.logUint((((collateralInUSD + calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
         USDCToken.safeTransferFrom(
             msg.sender,
             address(this),
@@ -262,6 +265,9 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 usdcPrice = _getUSDCPrice();
         int256 pnl = _getPNL(positionID);
         uint256 amountToReturn;
+        console.log("Collateral %d" , position.collateralInUSD);
+        console.logInt(pnl);
+
         if (pnl < 0) {
             if (_absoluteValue(pnl) > position.collateralInUSD) {
                 amountToReturn = position.collateralInUSD;
@@ -271,12 +277,16 @@ contract PerpetualVault is ERC4626, Ownable {
         } else {
             amountToReturn = position.collateralInUSD + uint256(pnl);
         }
-
+        amountToReturn = amountToReturn/100;
+        console.log("amount to return %d" , amountToReturn);
+        console.log("USDC %d" , usdcPrice);
         uint256 gasStipend = _getGasStipend();
         USDCToken.safeTransfer(
             position.positionOwner, (amountToReturn * (10 ** priceFeed.decimals("USDC"))) / usdcPrice
         );
         USDCToken.safeTransfer(msg.sender, gasStipend);
+
+        delete openPositons[positionID];
     }
 
     function getUsableBalance() public returns (uint256) {
@@ -302,12 +312,13 @@ contract PerpetualVault is ERC4626, Ownable {
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
         uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
+        console.log("position size : %d" , position.size);
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
-            return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD));
+            return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD * (10**wBTCToken.decimals())));
         }
 
-        return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice));
+        return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice * (10**wBTCToken.decimals())));
     }
 
     function getSystemPNL() public view returns (int256) {
