@@ -33,4 +33,48 @@ contract PerpetualVaultInternalTest is  Test {
         assertEq(vault._getGasStipend(), 5 * 10 ** 6);
     }
 
+    function test_absoluteValue() public {
+        assertEq(vault._absouluteValueInternal(-100) , 100);
+        assertEq(vault._absouluteValueInternal(100) , 100);
+        assertEq(vault._absouluteValueInternal(0) , 0);
+    }
+
+    function test_canSizeChange() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
+        assertEq(tempHash, hashValue);
+        assertEq(vault._canChangeSizeInternal(hashValue , 100 , true) , true);
+        vm.stopPrank();
+    }
+    function test_CanChangeCollateral() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
+        assertEq(tempHash, hashValue);
+        assertEq(vault._canChangeCollateralInternal(hashValue , 20 , true) , true);
+        vm.stopPrank();
+    }
+
+    function test_IsHealthyPosition() public {
+        vm.startPrank(address(1));
+        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
+        bytes32 hashValue = vault.openPosition(100, 1000, true);
+        bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
+        assertEq(tempHash, hashValue);
+        assertEq(vault._isHealthyPositionInternal(hashValue) , true);
+        vm.stopPrank();
+    }
+
 }
