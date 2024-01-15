@@ -28,10 +28,6 @@ contract PerpetualVaultTest is Test {
         assertEq(address(vault.getUSDCAddress()), address(usdcToken));
     }
 
-    function test_USDCPrice() public {
-        assertEq(vault._getUSDCPrice(), 10 ** 6);
-    }
-
     function test_USDCDecimals() public {
         assertEq(usdcToken.decimals(), 6);
     }

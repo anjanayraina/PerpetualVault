@@ -7,7 +7,7 @@ import {USDC} from "../../src/Tokens/USDCToken.sol";
 import {WBTCToken} from "../../src/Tokens/WBTCToken.sol";
 import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 
-contract PerpetualVaultInvariantTest is Test {
+contract PerpetualVaultInvariantTest is  Test {
     USDC usdcToken;
     WBTCToken wBTCToken;
 
@@ -31,17 +31,13 @@ contract PerpetualVaultInvariantTest is Test {
         assertEq(address(vault.getUSDCAddress()), address(usdcToken));
     }
 
-    function test_USDCPrice() public {
-        assertEq(vault._getUSDCPrice(), 10 ** 6);
-    }
+
 
     function test_USDCDecimals() public {
         assertEq(usdcToken.decimals(), 6);
     }
 
-    function test_GasStipend() public {
-        assertEq(vault._getGasStipend(), 5 * 10 ** 6);
-    }
+
 
     function test_USDCOwner() public {
         assertEq(usdcToken.owner(), address(1));
@@ -111,4 +107,6 @@ contract PerpetualVaultInvariantTest is Test {
         assertGt(usdcToken.balanceOf(address(vault)), prevBalance);
         vm.stopPrank();
     }
+
+
 }

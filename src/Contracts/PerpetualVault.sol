@@ -16,8 +16,8 @@ pragma solidity 0.8.21;
 // - 10. Individual position’s can be liquidated with a liquidate function, any address may invoke the liquidate function [Done]
 // - 11. A liquidatorFee is taken from the position’s remaining collateral upon liquidation with the liquidate function and given to the caller of the liquidate function [Done]
 // - 12. Traders can never modify their position such that it would make the position liquidatable [Done]
-// - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open []
-// - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus []
+// - 13. Traders are charged a borrowingFee which accrues as a function of their position size and the length of time the position is open [Done]
+// - 14. Traders are charged a positionFee from their collateral whenever they change the size of their position, the positionFee is a percentage of the position size delta (USD converted to collateral token). — Optional/Bonus [Done]
 // - 15. Implement Double Oracle System in the contract [Done]
 // - 16. Interagte the Double Oracle System in PerpetualVault Contract [Done]
 
@@ -131,7 +131,7 @@ contract PerpetualVault is ERC4626, Ownable {
     }
 
     function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
-        uint256 liquidityUsedIdle = getUsableBalance();
+        uint256 liquidityUsedIdle = _getUsableBalance();
         if (liquidityUsedIdle < assets) {
             revert NotEnoughLiquidity();
         }
@@ -156,11 +156,11 @@ contract PerpetualVault is ERC4626, Ownable {
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
         
-        console.logUint((((collateralInUSD + calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
+        console.logUint((((collateralInUSD + _calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
         USDCToken.safeTransferFrom(
             msg.sender,
             address(this),
-            (((collateralInUSD + calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
+            (((collateralInUSD + _calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
         uint256 btcSize =
             (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
         openPositons[positionHash] =
@@ -175,7 +175,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return positionHash;
     }
 
-    function calculatePositionOpeningFee(uint256 positionSize ) internal view returns (uint256){
+    function _calculatePositionOpeningFee(uint256 positionSize ) internal view returns (uint256){
         return (positionSize*POSITION_OPENING_FEE)/TOTAL_BPS;
     }
 
@@ -288,7 +288,7 @@ contract PerpetualVault is ERC4626, Ownable {
         delete openPositons[positionID];
     }
 
-    function getUsableBalance() public returns (uint256) {
+    function _getUsableBalance() internal returns (uint256) {
         uint256 currentBalance = USDCToken.balanceOf(address(this));
         return (currentBalance * MAX_ALLOWED_BPS) / TOTAL_BPS;
     }
@@ -298,7 +298,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return uint256(price);
     }
 
-    function _getUSDCPrice() public view returns (uint256) {
+    function _getUSDCPrice() internal view returns (uint256) {
         int256 price = priceFeed.getPrice("USDC");
         return uint256(price);
     }
@@ -364,7 +364,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return keccak256(abi.encodePacked(owner, collateralInUSD, sizeInUSD, isLong));
     }
 
-    function _getGasStipend() public returns (uint256 amount) {
+    function _getGasStipend() public view returns (uint256 amount) {
         uint256 usdcPrice = _getUSDCPrice();
         amount = (GAS_STIPEND * (10 ** USDCToken.decimals()) * (10 ** priceFeed.decimals("USDC"))) / usdcPrice;
     }
@@ -400,7 +400,7 @@ contract PerpetualVault is ERC4626, Ownable {
         return leverage <= MAX_LEVERAGE;
     }
 
-    function _canChangeSize(bytes32 positionID, uint256 sizeChange, bool isIncerement) public view returns (bool) {
+    function _canChangeSize(bytes32 positionID, uint256 sizeChange, bool isIncerement) internal view returns (bool) {
         Position memory position = getPosition(positionID);
         int256 pnl = _getPNL(positionID);
 
