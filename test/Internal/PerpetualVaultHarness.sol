@@ -39,6 +39,6 @@ contract PerpetualVaultHarness is PerpetualVault{
     }
 
     function _isHealthyPositionInternal(bytes32 positionID ) public view returns (bool){
-        super._isHealthyPosition(positionID);
+        return super._isHealthyPosition(positionID);
     }
 }
