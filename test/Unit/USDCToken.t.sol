@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {USDC} from "../src/Tokens/USDCToken.sol";
+import {USDC} from "../../src/Tokens/USDCToken.sol";
 
 contract USDCTokenTest is Test {
     USDC public contractAddress;

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
+import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 
 contract AggregatorV3ContractTest is Test {
     AggregatorV3Contract oracle;

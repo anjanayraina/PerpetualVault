@@ -2,10 +2,10 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {PerpetualVault} from "../src/Contracts/PerpetualVault.sol";
-import {USDC} from "../src/Tokens/USDCToken.sol";
-import {WBTCToken} from "../src/Tokens/WBTCToken.sol";
-import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
+import {PerpetualVault} from "../../src/Contracts/PerpetualVault.sol";
+import {USDC} from "../../src/Tokens/USDCToken.sol";
+import {WBTCToken} from "../../src/Tokens/WBTCToken.sol";
+import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 
 contract PerpetualVaultTest is Test {
     USDC usdcToken;
@@ -32,9 +32,7 @@ contract PerpetualVaultTest is Test {
         assertEq(usdcToken.decimals(), 6);
     }
 
-    function test_GasStipend() public {
-        assertEq(vault._getGasStipend(), 5 * 10 ** 6);
-    }
+
 
     function test_USDCOwner() public {
         assertEq(usdcToken.owner(), address(1));

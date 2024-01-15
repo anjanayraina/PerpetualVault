@@ -7,7 +7,7 @@ import {USDC} from "../../src/Tokens/USDCToken.sol";
 import {WBTCToken} from "../../src/Tokens/WBTCToken.sol";
 import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 
-contract PerpetualVaultInvariantTest is  Test {
+contract PerpetualVaultInvariantTest is Test {
     USDC usdcToken;
     WBTCToken wBTCToken;
 
@@ -31,13 +31,9 @@ contract PerpetualVaultInvariantTest is  Test {
         assertEq(address(vault.getUSDCAddress()), address(usdcToken));
     }
 
-
-
     function test_USDCDecimals() public {
         assertEq(usdcToken.decimals(), 6);
     }
-
-
 
     function test_USDCOwner() public {
         assertEq(usdcToken.owner(), address(1));
@@ -52,11 +48,11 @@ contract PerpetualVaultInvariantTest is  Test {
         vm.assume((collateral) / (10 ** (usdcToken.decimals() + 1)) < type(uint256).max);
         vm.assume(size / collateral < 21);
         vm.startPrank(address(1));
-        usdcToken.mint(address(2), (collateral *2) * (10 ** usdcToken.decimals()));
+        usdcToken.mint(address(2), (collateral * 2) * (10 ** usdcToken.decimals()));
         vm.stopPrank();
         vm.startPrank(address(2));
         uint256 prevBalance = usdcToken.balanceOf(address(vault));
-        usdcToken.approve(address(vault), (collateral*2) * (10 ** usdcToken.decimals()));
+        usdcToken.approve(address(vault), (collateral * 2) * (10 ** usdcToken.decimals()));
         bytes32 hashValue = vault.openPosition(collateral, size, true);
         bytes32 tempHash = vault._getPositionHash(address(2), collateral, size, true);
         assertEq(tempHash, hashValue);
@@ -107,6 +103,4 @@ contract PerpetualVaultInvariantTest is  Test {
         assertGt(usdcToken.balanceOf(address(vault)), prevBalance);
         vm.stopPrank();
     }
-
-
 }

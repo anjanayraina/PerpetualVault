@@ -8,7 +8,7 @@ import {WBTCToken} from "../../src/Tokens/WBTCToken.sol";
 import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 import {PerpetualVaultHarness} from "./PerpetualVaultHarness.sol";
 
-contract PerpetualVaultInternalTest is  Test {
+contract PerpetualVaultInternalTest is Test {
     USDC usdcToken;
     WBTCToken wBTCToken;
 
@@ -26,7 +26,7 @@ contract PerpetualVaultInternalTest is  Test {
 
     function test_PositionOpeningFee(uint256 positionSize) public {
         vm.assume(positionSize < type(uint256).max / 100);
-        assertEq(positionSize / 500 , vault._calculatePositionOpeningFeeInternal(positionSize));
+        assertEq(positionSize / 500, vault._calculatePositionOpeningFeeInternal(positionSize));
     }
 
     function test_GasStipend() public {
@@ -34,9 +34,9 @@ contract PerpetualVaultInternalTest is  Test {
     }
 
     function test_absoluteValue() public {
-        assertEq(vault._absouluteValueInternal(-100) , 100);
-        assertEq(vault._absouluteValueInternal(100) , 100);
-        assertEq(vault._absouluteValueInternal(0) , 0);
+        assertEq(vault._absouluteValueInternal(-100), 100);
+        assertEq(vault._absouluteValueInternal(100), 100);
+        assertEq(vault._absouluteValueInternal(0), 0);
     }
 
     function test_canSizeChange() public {
@@ -48,9 +48,10 @@ contract PerpetualVaultInternalTest is  Test {
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
         assertEq(tempHash, hashValue);
-        assertEq(vault._canChangeSizeInternal(hashValue , 100 , true) , true);
+        assertEq(vault._canChangeSizeInternal(hashValue, 100, true), true);
         vm.stopPrank();
     }
+
     function test_CanChangeCollateral() public {
         vm.startPrank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
@@ -60,7 +61,7 @@ contract PerpetualVaultInternalTest is  Test {
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
         assertEq(tempHash, hashValue);
-        assertEq(vault._canChangeCollateralInternal(hashValue , 20 , true) , true);
+        assertEq(vault._canChangeCollateralInternal(hashValue, 20, true), true);
         vm.stopPrank();
     }
 
@@ -73,8 +74,7 @@ contract PerpetualVaultInternalTest is  Test {
         bytes32 hashValue = vault.openPosition(100, 1000, true);
         bytes32 tempHash = vault._getPositionHash(address(2), 100, 1000, true);
         assertEq(tempHash, hashValue);
-        assertEq(vault._isHealthyPositionInternal(hashValue) , true);
+        assertEq(vault._isHealthyPositionInternal(hashValue), true);
         vm.stopPrank();
     }
-
 }

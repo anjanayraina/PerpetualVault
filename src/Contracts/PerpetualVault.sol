@@ -155,12 +155,25 @@ contract PerpetualVault is ERC4626, Ownable {
         }
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
-        
-        console.logUint((((collateralInUSD + _calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
+
+        console.logUint(
+            (
+                (
+                    (collateralInUSD + _calculatePositionOpeningFee(sizeInUSD)) * (10 ** USDCToken.decimals())
+                        + _getGasStipend()
+                ) * (10 ** priceFeed.decimals("USDC"))
+            ) / _getUSDCPrice()
+        );
         USDCToken.safeTransferFrom(
             msg.sender,
             address(this),
-            (((collateralInUSD + _calculatePositionOpeningFee(sizeInUSD) ) *(10 ** USDCToken.decimals()) + _getGasStipend() ) * (10 ** priceFeed.decimals("USDC"))) / _getUSDCPrice());
+            (
+                (
+                    (collateralInUSD + _calculatePositionOpeningFee(sizeInUSD)) * (10 ** USDCToken.decimals())
+                        + _getGasStipend()
+                ) * (10 ** priceFeed.decimals("USDC"))
+            ) / _getUSDCPrice()
+        );
         uint256 btcSize =
             (sizeInUSD * (10 ** priceFeed.decimals("WBTC")) * (10 ** wBTCToken.decimals())) / _getBTCPrice();
         openPositons[positionHash] =
@@ -175,17 +188,16 @@ contract PerpetualVault is ERC4626, Ownable {
         return positionHash;
     }
 
-    function _calculatePositionOpeningFee(uint256 positionSize ) internal view returns (uint256){
-        return (positionSize*POSITION_OPENING_FEE)/TOTAL_BPS;
+    function _calculatePositionOpeningFee(uint256 positionSize) internal view returns (uint256) {
+        return (positionSize * POSITION_OPENING_FEE) / TOTAL_BPS;
     }
 
-    function calculatePositionSizeChangeFee(uint positionSizeChange) internal view returns(uint256){
-        return (positionSizeChange*POSITION_SIZE_CHANGE_BPS)/TOTAL_BPS;
-
+    function calculatePositionSizeChangeFee(uint256 positionSizeChange) internal view returns (uint256) {
+        return (positionSizeChange * POSITION_SIZE_CHANGE_BPS) / TOTAL_BPS;
     }
 
-    function calculatePositionCollateralChangeFee(uint256 positionCollateralChange) internal view returns(uint256){
-        return (positionCollateralChange * POSITION_COLLATERAL_CHANGE_BPS)/TOTAL_BPS;
+    function calculatePositionCollateralChangeFee(uint256 positionCollateralChange) internal view returns (uint256) {
+        return (positionCollateralChange * POSITION_COLLATERAL_CHANGE_BPS) / TOTAL_BPS;
     }
 
     function increasePositionSize(bytes32 positionID, uint256 sizeChangeInUSD) external onlyPositionOwner(positionID) {
@@ -206,8 +218,11 @@ contract PerpetualVault is ERC4626, Ownable {
             btcSizeOpenedShort += btcSize;
         }
 
-        uint256 feeOnSizeChange = (calculatePositionSizeChangeFee(sizeChangeInUSD) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
-        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnSizeChange);
+        uint256 feeOnSizeChange = (
+            calculatePositionSizeChangeFee(sizeChangeInUSD) * (10 ** priceFeed.decimals("USDC"))
+                * (10 ** USDCToken.decimals())
+        ) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender, address(this), feeOnSizeChange);
     }
 
     function decreasePositionSize(bytes32 positionID, uint256 sizeChangeInUSD) external onlyPositionOwner(positionID) {
@@ -226,8 +241,11 @@ contract PerpetualVault is ERC4626, Ownable {
             initialBTCInUSDShort -= sizeChangeInUSD;
             btcSizeOpenedShort -= btcSize;
         }
-        uint256 feeOnSizeChange = (calculatePositionSizeChangeFee(sizeChangeInUSD) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
-        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnSizeChange);
+        uint256 feeOnSizeChange = (
+            calculatePositionSizeChangeFee(sizeChangeInUSD) * (10 ** priceFeed.decimals("USDC"))
+                * (10 ** USDCToken.decimals())
+        ) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender, address(this), feeOnSizeChange);
     }
 
     function increasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -240,9 +258,11 @@ contract PerpetualVault is ERC4626, Ownable {
         }
         position.collateralInUSD =
             position.collateralInUSD + (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
-        uint256 feeOnCollateralChange = (calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
-        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnCollateralChange);
-
+        uint256 feeOnCollateralChange = (
+            calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC"))
+                * (10 ** USDCToken.decimals())
+        ) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender, address(this), feeOnCollateralChange);
     }
 
     function decreasePositionCollateral(bytes32 positionID, uint256 collateralChange)
@@ -256,8 +276,11 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
         position.collateralInUSD =
             position.collateralInUSD - (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
-        uint256 feeOnCollateralChange = (calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC")) * (10 ** USDCToken.decimals())) / _getUSDCPrice();
-        USDCToken.safeTransferFrom(msg.sender , address(this) , feeOnCollateralChange);
+        uint256 feeOnCollateralChange = (
+            calculatePositionCollateralChangeFee(collateralChange) * (10 ** priceFeed.decimals("USDC"))
+                * (10 ** USDCToken.decimals())
+        ) / _getUSDCPrice();
+        USDCToken.safeTransferFrom(msg.sender, address(this), feeOnCollateralChange);
     }
 
     function liquidate(bytes32 positionID) external {
@@ -278,7 +301,7 @@ contract PerpetualVault is ERC4626, Ownable {
         } else {
             amountToReturn = position.collateralInUSD + uint256(pnl);
         }
-        amountToReturn = amountToReturn/100;
+        amountToReturn = amountToReturn / 100;
         uint256 gasStipend = _getGasStipend();
         USDCToken.safeTransfer(
             position.positionOwner, (amountToReturn * (10 ** priceFeed.decimals("USDC"))) / usdcPrice
@@ -311,13 +334,14 @@ contract PerpetualVault is ERC4626, Ownable {
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
         uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
-        console.log("position size : %d" , position.size);
+        console.log("position size : %d", position.size);
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
-            return int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD * (10**wBTCToken.decimals())));
+            return
+                int256(int256(currentPositionPrice) - int256(position.creationSizeInUSD * (10 ** wBTCToken.decimals())));
         }
 
-        return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice * (10**wBTCToken.decimals())));
+        return int256(int256(position.creationSizeInUSD) - int256(currentPositionPrice * (10 ** wBTCToken.decimals())));
     }
 
     function getSystemPNL() public view returns (int256) {
@@ -351,12 +375,12 @@ contract PerpetualVault is ERC4626, Ownable {
         } else {
             adjustedCollateral = position.collateralInUSD + uint256(pnl);
         }
-        console.log("Adjusted Collateral : %d" ,adjustedCollateral );
-        console.logInt( pnl);
-        uint256 btcPrice = _getBTCPrice() / (10**priceFeed.decimals("WBTC"));
-        console.log(" BTC Price: %d" ,btcPrice );
-        uint256 leverage = (position.size * btcPrice) / (adjustedCollateral*(10**wBTCToken.decimals()));
-        console.log("leverage : %d",leverage );
+        console.log("Adjusted Collateral : %d", adjustedCollateral);
+        console.logInt(pnl);
+        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
+        console.log(" BTC Price: %d", btcPrice);
+        uint256 leverage = (position.size * btcPrice) / (adjustedCollateral * (10 ** wBTCToken.decimals()));
+        console.log("leverage : %d", leverage);
         return leverage <= MAX_LEVERAGE;
     }
 
@@ -383,23 +407,27 @@ contract PerpetualVault is ERC4626, Ownable {
         uint256 adjustedCollateral;
         if (pnl < 0) {
             if (isIncement) {
-                adjustedCollateral = (position.collateralInUSD +sizeChange)*(10**wBTCToken.decimals()) - _absoluteValue(pnl) ;
+                adjustedCollateral =
+                    (position.collateralInUSD + sizeChange) * (10 ** wBTCToken.decimals()) - _absoluteValue(pnl);
             } else {
-                adjustedCollateral = (position.collateralInUSD -sizeChange)*(10**wBTCToken.decimals()) - _absoluteValue(pnl);
+                adjustedCollateral =
+                    (position.collateralInUSD - sizeChange) * (10 ** wBTCToken.decimals()) - _absoluteValue(pnl);
             }
         } else {
             if (isIncement) {
-                adjustedCollateral = (position.collateralInUSD +sizeChange)*(10**wBTCToken.decimals()) + uint(pnl);
+                adjustedCollateral =
+                    (position.collateralInUSD + sizeChange) * (10 ** wBTCToken.decimals()) + uint256(pnl);
             } else {
-                adjustedCollateral = (position.collateralInUSD -sizeChange)*(10**wBTCToken.decimals()) + uint(pnl);
+                adjustedCollateral =
+                    (position.collateralInUSD - sizeChange) * (10 ** wBTCToken.decimals()) + uint256(pnl);
             }
         }
         if (adjustedCollateral == 0) return false;
-        uint256 btcPrice = _getBTCPrice()/10**wBTCToken.decimals() ;
+        uint256 btcPrice = _getBTCPrice() / 10 ** wBTCToken.decimals();
         uint256 leverage = (position.size * btcPrice) / (adjustedCollateral);
-        console.log("leverage: %d" , leverage);
-        console.log("adjusted collateral %d" , adjustedCollateral);
-        console.log("btcPrice %d" , btcPrice);
+        console.log("leverage: %d", leverage);
+        console.log("adjusted collateral %d", adjustedCollateral);
+        console.log("btcPrice %d", btcPrice);
 
         return leverage <= MAX_LEVERAGE;
     }

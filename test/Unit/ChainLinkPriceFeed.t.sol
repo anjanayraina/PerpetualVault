@@ -1,10 +1,10 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ChainLinkPriceFeed} from "../src/PriceFeed/ChainLinkPriceFeed.sol";
-import {USDC} from "../src/Tokens/USDCToken.sol";
-import {WBTCToken} from "../src/Tokens/WBTCToken.sol";
-import {AggregatorV3Contract} from "../src/Oracle/AggregatorV3Contract.sol";
+import {ChainLinkPriceFeed} from "../../src/PriceFeed/ChainLinkPriceFeed.sol";
+import {USDC} from "../../src/Tokens/USDCToken.sol";
+import {WBTCToken} from "../../src/Tokens/WBTCToken.sol";
+import {AggregatorV3Contract} from "../../src/Oracle/AggregatorV3Contract.sol";
 
 contract ChainLinkPriceFeedTest is Test {
     USDC usdcToken;
