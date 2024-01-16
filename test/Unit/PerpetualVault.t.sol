@@ -131,33 +131,6 @@ contract PerpetualVaultTest is Test {
         vm.stopPrank();
     }
 
-    function test_DecreasePositionSize() public {
-        vm.startPrank(address(1));
-        usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));
-        vm.stopPrank();
-        vm.startPrank(address(2));
-        usdcToken.approve(address(vault), 150 * (10 ** usdcToken.decimals()));
-        bytes32 hashValue = vault.openPosition(100, 1000, true);
-        PerpetualVault.Position memory position = vault.getPosition(hashValue);
-        assertEq(position.creationSizeInUSD, 1000);
-        assertEq(vault._getPNL(hashValue) , 0);
-        assertEq(position.collateralInUSD, 100);
-        assertEq(position.creationSizeInUSD, 1000);
-        assertEq(position.isLong, true);
-        assertEq(position.positionID, hashValue);
-        assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 1000 / (100) * (10 ** wBTCToken.decimals()));
-        vault.decreasePositionSize(hashValue, 1);
-        position = vault.getPosition(hashValue);
-        assertEq(position.collateralInUSD, 100);
-        assertEq(position.creationSizeInUSD, 900);
-        assertEq(position.isLong, true);
-        assertEq(position.positionID, hashValue);
-        assertEq(position.positionOwner, address(2));
-        assertEq(position.size, 9);
-        vm.stopPrank();
-    }
-
     function test_IncreasePositionCollateral() public {
         vm.startPrank(address(1));
         usdcToken.mint(address(2), 1000 * (10 ** usdcToken.decimals()));

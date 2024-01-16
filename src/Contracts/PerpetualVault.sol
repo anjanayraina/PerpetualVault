@@ -86,10 +86,14 @@ contract PerpetualVault is ERC4626, Ownable {
         priceFeed.addToken(
             "USDC",
             address(
-                new AggregatorV3Contract(msg.sender , USDCToken.decimals() , int256(1*(10**USDCToken.decimals())) , "Oracle")
+                new AggregatorV3Contract(
+                    msg.sender, USDCToken.decimals(), int256(1 * (10 ** USDCToken.decimals())), "Oracle"
+                )
             ),
             address(
-                new AggregatorV3Contract(msg.sender , USDCToken.decimals() , int256(1*(10**USDCToken.decimals())) , "Oracle")
+                new AggregatorV3Contract(
+                    msg.sender, USDCToken.decimals(), int256(1 * (10 ** USDCToken.decimals())), "Oracle"
+                )
             ),
             1,
             USDCToken.decimals()
@@ -97,10 +101,14 @@ contract PerpetualVault is ERC4626, Ownable {
         priceFeed.addToken(
             "WBTC",
             address(
-                new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , int256(100*(10**wBTCToken.decimals())) , "Oracle")
+                new AggregatorV3Contract(
+                    msg.sender, wBTCToken.decimals(), int256(100 * (10 ** wBTCToken.decimals())), "Oracle"
+                )
             ),
             address(
-                new AggregatorV3Contract(msg.sender , wBTCToken.decimals() , int256(100*(10**wBTCToken.decimals())) , "Oracle")
+                new AggregatorV3Contract(
+                    msg.sender, wBTCToken.decimals(), int256(100 * (10 ** wBTCToken.decimals())), "Oracle"
+                )
             ),
             int256(100 * (10 ** wBTCToken.decimals())),
             wBTCToken.decimals()
@@ -125,9 +133,9 @@ contract PerpetualVault is ERC4626, Ownable {
     function totalAssets() public view override(ERC4626) returns (uint256) {
         int256 pnl = getSystemPNL();
         if (pnl <= 0) {
-            return super.totalAssets();
+            return super.totalAssets() - _absoluteValue(pnl);
         }
-        return super.totalAssets() - _absoluteValue(pnl);
+        return super.totalAssets() + uint256(pnl);
     }
 
     function withdraw(uint256 assets, address reciever, address owner) public override(ERC4626) returns (uint256) {
@@ -156,14 +164,6 @@ contract PerpetualVault is ERC4626, Ownable {
 
         bytes32 positionHash = _getPositionHash(msg.sender, collateralInUSD, sizeInUSD, isLong);
 
-        console.logUint(
-            (
-                (
-                    (collateralInUSD + _calculatePositionOpeningFee(sizeInUSD)) * (10 ** USDCToken.decimals())
-                        + _getGasStipend()
-                ) * (10 ** priceFeed.decimals("USDC"))
-            ) / _getUSDCPrice()
-        );
         USDCToken.safeTransferFrom(
             msg.sender,
             address(this),
@@ -273,7 +273,6 @@ contract PerpetualVault is ERC4626, Ownable {
         if (!_canChangeCollateral(positionID, collateralChange, false)) {
             revert CannotChangeCollateral();
         }
-        uint256 usdcPrice = _getUSDCPrice() / (10 ** priceFeed.decimals("USDC"));
         position.collateralInUSD =
             position.collateralInUSD - (collateralChange * _getUSDCPrice()) / (10 ** priceFeed.decimals("USDC"));
         uint256 feeOnCollateralChange = (
@@ -334,7 +333,6 @@ contract PerpetualVault is ERC4626, Ownable {
     function _getPNL(bytes32 positionID) public view returns (int256) {
         Position memory position = _getPosition(positionID);
         uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
-        console.log("position size : %d", position.size);
         uint256 currentPositionPrice = position.size * btcPrice;
         if (position.isLong) {
             return
@@ -447,7 +445,6 @@ contract PerpetualVault is ERC4626, Ownable {
             return false;
         }
         uint256 adjustedSize;
-        uint256 btcPrice = _getBTCPrice() / (10 ** priceFeed.decimals("WBTC"));
 
         if (isIncerement) {
             adjustedSize += sizeChange;

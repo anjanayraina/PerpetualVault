@@ -35,6 +35,7 @@ contract USDCTokenTest is Test {
     }
 
     function testFail_OtherMint(uint256 amount, address testAddr) public {
+        vm.assume(testAddr != address(0));
         vm.prank(address(2));
         contractAddress.mint(testAddr, amount);
         assertEq(contractAddress.balanceOf(testAddr), amount);
